@@ -7,36 +7,36 @@ export const defaultAppliances: Appliance[] = [
     name: "EV Charger",
     shiftable: true,
     duration_minutes: 240,
-    deadline: "2026-03-22T14:00:00Z",
     power_kw: 7.2,
     dependencies: [],
+    preferred_start: "2026-03-21T18:00:00Z", // baseline: evening peak
   },
   {
     id: "dishwasher",
     name: "Dishwasher",
     shiftable: true,
     duration_minutes: 60,
-    deadline: "2026-03-21T12:00:00Z",
     power_kw: 1.8,
     dependencies: [],
+    preferred_start: "2026-03-21T19:00:00Z", // baseline: evening peak
   },
   {
     id: "washer",
     name: "Washer",
     shiftable: true,
     duration_minutes: 45,
-    deadline: "2026-03-21T14:00:00Z",
     power_kw: 0.5,
     dependencies: [],
+    preferred_start: "2026-03-21T17:00:00Z", // baseline: evening peak
   },
   {
     id: "dryer",
     name: "Dryer",
     shiftable: true,
     duration_minutes: 60,
-    deadline: "2026-03-21T16:00:00Z",
     power_kw: 5.0,
     dependencies: ["washer"],
+    preferred_start: "2026-03-21T17:45:00Z", // baseline: after washer
   },
   {
     id: "hvac",
@@ -45,6 +45,7 @@ export const defaultAppliances: Appliance[] = [
     duration_minutes: 480,
     power_kw: 3.5,
     dependencies: [],
+    preferred_start: "2026-03-21T08:00:00Z", // fixed: daytime slot, after clean window
   },
 ];
 

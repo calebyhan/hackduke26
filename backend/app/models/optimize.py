@@ -10,6 +10,7 @@ class Appliance(BaseModel):
     deadline: str | None = None
     power_kw: float
     dependencies: list[str] = []
+    preferred_start: str | None = None  # baseline slot (required for fixed; sets unoptimized position for shiftable)
 
 
 class OptimizeRequest(BaseModel):

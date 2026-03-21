@@ -6,6 +6,7 @@ import {
   defaultAppliances,
   baselineSchedule,
 } from "../../fixtures/appliances";
+import { fixtureForecast } from "../../fixtures/forecast";
 import { fixtureOptimizeResult } from "../../fixtures/optimizeResult";
 import { fixtureBrief } from "../../fixtures/brief";
 import { useForecast } from "../../hooks/useForecast";
@@ -34,11 +35,14 @@ export default function CommandView() {
   const handleOptimize = useCallback(async () => {
     setIsOptimizing(true);
 
+    // Always use fixture forecast for optimization — the fixture appliances and
+    // fixture forecast are calibrated together for a compelling CO2 contrast.
+    // Live WattTime data is used only for the timeline display.
     let result: OptimizeResponse;
     try {
       result = await fetchOptimize(
         forecast.region,
-        forecast.points,
+        fixtureForecast.points,
         defaultAppliances
       );
     } catch {

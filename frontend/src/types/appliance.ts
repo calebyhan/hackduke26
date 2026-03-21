@@ -6,4 +6,5 @@ export interface Appliance {
   deadline?: string;
   power_kw: number;
   dependencies: string[];
+  preferred_start?: string;
 }

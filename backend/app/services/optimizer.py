@@ -52,6 +52,42 @@ def _compute_co2(
     return total
 
 
+def _find_nearest_slot(points: list[ForecastPointInput], time_str: str) -> int:
+    """Return the index of the forecast point whose start is closest to time_str."""
+    target = _parse_iso(time_str).timestamp()
+    best_i, best_diff = 0, float("inf")
+    for i, p in enumerate(points):
+        diff = abs(_parse_iso(p.start).timestamp() - target)
+        if diff < best_diff:
+            best_diff = diff
+            best_i = i
+    return best_i
+
+
+def _topo_sort_shiftable(appliances: list[Appliance]) -> list[Appliance]:
+    """Sort shiftable appliances so dependencies are scheduled before dependents."""
+    shiftable_ids = {a.id for a in appliances}
+    result: list[Appliance] = []
+    remaining = list(appliances)
+    done: set[str] = set()
+    while remaining:
+        progress = False
+        next_remaining = []
+        for a in sorted(remaining, key=_sort_key_priority):
+            unmet = [d for d in a.dependencies if d in shiftable_ids and d not in done]
+            if not unmet:
+                result.append(a)
+                done.add(a.id)
+                progress = True
+            else:
+                next_remaining.append(a)
+        if not progress:
+            result.extend(next_remaining)
+            break
+        remaining = next_remaining
+    return result
+
+
 def optimize(request: OptimizeRequest) -> OptimizeResponse:
     points = request.points
     appliances = request.appliances
@@ -60,56 +96,49 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
     if not points:
         raise ValueError("No forecast points provided")
 
-    points_per_slot = 1  # each point is 5 minutes
-    point_starts = {p.start: i for i, p in enumerate(points)}
-
-    # Resolve dependency graph: parent must be scheduled before child
-    scheduled: dict[str, tuple[int, int]] = {}  # appliance_id -> (start_idx, end_idx)
-
-    # Build baseline from original appliance order (assume first available slot)
+    # --- Build baseline: each appliance's unoptimized position ---
+    # preferred_start pins the exact baseline slot; shiftable without one defaults to end of window.
     baseline_schedule: dict[str, tuple[int, int]] = {}
-
-    # Sort by priority
-    sorted_appliances = sorted(appliances, key=_sort_key_priority)
-
-    # Assign baseline slots (sequential placement for shiftable, preserving order)
-    next_baseline_start = 0
-    for a in sorted_appliances:
-        duration_points = a.duration_minutes // interval_minutes
-        # Baseline: place at next available slot
-        start_idx = next_baseline_start
-        if start_idx + duration_points > len(points):
-            start_idx = max(0, len(points) - duration_points)
-        baseline_schedule[a.id] = (start_idx, start_idx + duration_points)
-        if a.shiftable:
-            next_baseline_start = start_idx + duration_points
+    for a in appliances:
+        n = a.duration_minutes // interval_minutes
+        if a.preferred_start:
+            start = min(_find_nearest_slot(points, a.preferred_start), len(points) - n)
+        elif a.shiftable:
+            # No hint: assume lazy end-of-window scheduling (worst case)
+            start = max(0, len(points) - n)
         else:
-            next_baseline_start = start_idx + duration_points
+            start = 0
+        baseline_schedule[a.id] = (start, start + n)
 
-    # Optimize: greedy assignment
+    # --- Phase 1: lock fixed appliances ---
+    scheduled: dict[str, tuple[int, int]] = {}
     reserved: list[bool] = [False] * len(points)
 
-    for a in sorted_appliances:
-        duration_points = a.duration_minutes // interval_minutes
-
+    for a in appliances:
         if not a.shiftable:
-            # Keep baseline slot
             b_start, b_end = baseline_schedule[a.id]
             scheduled[a.id] = (b_start, b_end)
             for i in range(b_start, min(b_end, len(points))):
                 reserved[i] = True
-            continue
 
+    # --- Phase 2: greedy optimize shiftables in dependency order ---
+    shiftables = _topo_sort_shiftable([a for a in appliances if a.shiftable])
+
+    for a in shiftables:
+        n = a.duration_minutes // interval_minutes
+
+        # Deadline window — ignore if already expired (idx too small for any window)
         deadline_idx = len(points)
         if a.deadline:
             deadline_dt = _parse_iso(a.deadline)
-            # Find the latest start index that finishes by deadline
             for i, p in enumerate(points):
                 if _parse_iso(p.end) > deadline_dt:
                     deadline_idx = i
                     break
+            if deadline_idx < n:
+                deadline_idx = len(points)  # deadline passed; use full window
 
-        # Dependency constraint: must start after all dependencies finish
+        # Dependency constraint: must start after all shiftable deps finish
         min_start = 0
         for dep_id in a.dependencies:
             if dep_id in scheduled:
@@ -117,43 +146,31 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
                 min_start = max(min_start, dep_end)
 
         # Enumerate feasible windows
-        feasible: list[tuple[float, float, int, int, int]] = []
-        for start_idx in range(min_start, len(points) - duration_points + 1):
-            end_idx = start_idx + duration_points
+        feasible: list[tuple[float, float, int, int]] = []
+        for start_idx in range(min_start, len(points) - n + 1):
+            end_idx = start_idx + n
             if end_idx > deadline_idx:
                 break
-
-            # Check no overlap with reserved slots
-            conflict = False
-            for i in range(start_idx, end_idx):
-                if reserved[i]:
-                    conflict = True
-                    break
-            if conflict:
+            if any(reserved[i] for i in range(start_idx, end_idx)):
                 continue
-
-            avg_moer, avg_health = _score_window(points, start_idx, duration_points)
-            # Ranking tuple: (carbon, health, end_time, start_time)
-            feasible.append((avg_moer, avg_health, end_idx, start_idx, start_idx))
+            avg_moer, avg_health = _score_window(points, start_idx, n)
+            feasible.append((avg_moer, avg_health, end_idx, start_idx))
 
         if not feasible:
-            # No feasible window: keep baseline
             b_start, b_end = baseline_schedule[a.id]
             scheduled[a.id] = (b_start, b_end)
             for i in range(b_start, min(b_end, len(points))):
                 reserved[i] = True
             continue
 
-        # Select best window
         feasible.sort()
-        best = feasible[0]
-        best_start = best[3]
-        best_end = best_start + duration_points
+        best_start = feasible[0][3]
+        best_end = best_start + n
         scheduled[a.id] = (best_start, best_end)
         for i in range(best_start, best_end):
             reserved[i] = True
 
-    # Build response
+    # --- Build response ---
     schedule_entries: list[ScheduleEntry] = []
     optimized_co2 = 0.0
     optimized_health = 0.0
@@ -161,20 +178,18 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
     baseline_health = 0.0
 
     for a in appliances:
-        duration_points = a.duration_minutes // interval_minutes
+        n = a.duration_minutes // interval_minutes
 
-        # Baseline metrics
-        b_start, b_end = baseline_schedule[a.id]
-        baseline_co2 += _compute_co2(points, b_start, duration_points, a.power_kw, interval_minutes)
-        b_moer, b_health = _score_window(points, b_start, duration_points)
-        baseline_health += b_health * duration_points
+        b_start, _ = baseline_schedule[a.id]
+        baseline_co2 += _compute_co2(points, b_start, n, a.power_kw, interval_minutes)
+        _, b_health = _score_window(points, b_start, n)
+        baseline_health += b_health * n
 
-        # Optimized metrics
         o_start, o_end = scheduled[a.id]
-        opt_co2 = _compute_co2(points, o_start, duration_points, a.power_kw, interval_minutes)
+        opt_co2 = _compute_co2(points, o_start, n, a.power_kw, interval_minutes)
         optimized_co2 += opt_co2
-        o_moer, o_health = _score_window(points, o_start, duration_points)
-        optimized_health += o_health * duration_points
+        o_moer, o_health = _score_window(points, o_start, n)
+        optimized_health += o_health * n
 
         schedule_entries.append(
             ScheduleEntry(
@@ -195,7 +210,6 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
     co2_percent = round((co2_delta / baseline_co2) * 100, 1) if baseline_co2 else 0.0
     health_delta = round(optimized_health - baseline_health, 1)
 
-    # DR readiness
     dr = compute_dr_readiness(points, scheduled, appliances)
 
     return OptimizeResponse(
