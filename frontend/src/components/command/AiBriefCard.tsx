@@ -39,6 +39,14 @@ export default function AiBriefCard({ brief }: AiBriefCardProps) {
                 <span className="font-headline text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Carbon Offset</span>
                 <span className="font-headline text-2xl font-bold tnum">{brief.savings_vs_unoptimized} <span className="text-xs font-normal text-on-surface-variant uppercase">kg</span></span>
               </div>
+              <div className="w-px h-10 bg-outline-variant/30"></div>
+              <div className="flex flex-col">
+                <span className="font-headline text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">DR Readiness</span>
+                <span className="font-headline text-2xl font-bold tnum text-primary">
+                  {brief.dr_readiness.qualified_windows}<span className="text-xs font-normal text-on-surface-variant">/{brief.dr_readiness.total_windows}</span>
+                </span>
+                <span className="font-headline text-[10px] text-emerald mt-0.5">${brief.dr_readiness.estimated_bill_credit_usd.toFixed(2)} est. credit</span>
+              </div>
             </div>
             <div className="space-y-4">
               {brief.nudges.slice(0, 2).map((nudge, i) => (

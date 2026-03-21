@@ -21,10 +21,9 @@ import CarbonCounter from "./CarbonCounter";
 import PolicyImpact from "./PolicyImpact";
 import ImpactProjection from "./ImpactProjection";
 import AutomationCta from "./AutomationCta";
-import SourceBadge from "./SourceBadge";
 
 export default function CommandView() {
-  const { forecast, error: forecastError, refresh: refreshForecast } = useForecast();
+  const { forecast } = useForecast();
   const { weather } = useWeather();
   const [schedule, setSchedule] = useState<ScheduleEntry[]>(baselineSchedule);
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResponse | null>(
@@ -128,13 +127,18 @@ export default function CommandView() {
         </div>
       </section>
       {/* MIDDLE: OPTIMIZE BUTTON */}
-      <div className="px-6 mt-4 relative z-10">
+      <div className="px-6 mt-4 relative z-10 flex items-center gap-6">
         <OptimizePanel
           isOptimizing={isOptimizing}
           isOptimized={isOptimized}
           onOptimize={handleOptimize}
           onReset={handleReset}
           result={optimizeResult}
+        />
+        <CarbonCounter
+          value={currentCo2}
+          baselineValue={baselineCo2}
+          isOptimized={isOptimized}
         />
       </div>
       {/* BOTTOM HALF: TWO COLUMNS */}
@@ -153,8 +157,13 @@ export default function CommandView() {
         {/* RIGHT COLUMN: TACTICAL BRIEFING */}
         <div className="flex flex-col gap-6">
           <AiBriefCard brief={brief} />
-          {/* Additional components can be added here */}
         </div>
+      </section>
+      {/* SECONDARY ROW: POLICY IMPACT, SCALED IMPACT, AUTOMATION */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 px-6 pb-24">
+        <PolicyImpact result={optimizeResult} />
+        <ImpactProjection result={optimizeResult} />
+        <AutomationCta />
       </section>
     </main>
   );

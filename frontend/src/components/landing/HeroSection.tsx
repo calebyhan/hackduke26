@@ -1,19 +1,37 @@
 import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const GRID_SIZE = 48;
-const GLOW_RADIUS = 260;
-const DISTORT_RADIUS = 160;
-const DISTORT_STRENGTH = 0.22;
-const BASE_ALPHA = 0.05;
-const PEAK_ALPHA = 0.55;
-const EM_R = 16, EM_G = 185, EM_B = 129; // emerald
+// Grid layout
+const GRID = 48;
+
+// Passive wave — grid lines slowly undulate
+const WAVE_AMP   = 5;    // max pixel displacement
+const WAVE_FREQ  = 0.016;
+const WAVE_SPEED = 0.28; // radians per frame (slow breathing)
+
+// Passive sparks — random intersection nodes briefly flare
+const SPARK_CHANCE   = 0.018; // probability per frame of spawning a spark
+const SPARK_MAX_LIFE = 55;    // frames until fully faded
+
+// Cursor interaction
+const ATTRACT_RADIUS   = 200;
+const ATTRACT_STRENGTH = 0.26;
+const GLOW_RADIUS      = 290;
+
+// Colors (emerald-500)
+const R = 16, G = 185, B = 129;
+const BASE_ALPHA = 0.13;
+const PEAK_ALPHA = 0.60;
+
+interface Spark { i: number; j: number; life: number }
 
 const HeroSection: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cursorRef = useRef({ x: -9999, y: -9999 });
-  const animRef = useRef<number>(0);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const cursorRef  = useRef({ x: -9999, y: -9999 });
+  const animRef    = useRef<number>(0);
+  const sparksRef  = useRef<Spark[]>([]);
+  const timeRef    = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -23,99 +41,161 @@ const HeroSection: React.FC = () => {
 
     const setSize = () => {
       const dpr = window.devicePixelRatio || 1;
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      canvas.width  = canvas.offsetWidth  * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
       ctx.scale(dpr, dpr);
     };
     setSize();
-
     const ro = new ResizeObserver(setSize);
     ro.observe(canvas);
 
     const draw = () => {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
+      const t  = timeRef.current += 0.016;
+      const w  = canvas.offsetWidth;
+      const h  = canvas.offsetHeight;
+      const cx = cursorRef.current.x;
+      const cy = cursorRef.current.y;
+      const cursorActive = cx !== -9999;
+
       ctx.clearRect(0, 0, w, h);
 
-      const { x: cx, y: cy } = cursorRef.current;
-      const active = cx !== -9999;
+      const cols = Math.ceil(w / GRID) + 1;
+      const rows = Math.ceil(h / GRID) + 1;
 
-      const cols = Math.ceil(w / GRID_SIZE) + 1;
-      const rows = Math.ceil(h / GRID_SIZE) + 1;
+      // -- Spawn passive sparks --
+      if (Math.random() < SPARK_CHANCE) {
+        sparksRef.current.push({
+          i: Math.floor(Math.random() * cols),
+          j: Math.floor(Math.random() * rows),
+          life: SPARK_MAX_LIFE,
+        });
+      }
+      // Spawn extra sparks near cursor
+      if (cursorActive && Math.random() < 0.12) {
+        const nearI = Math.round((cx + (Math.random() - 0.5) * ATTRACT_RADIUS) / GRID);
+        const nearJ = Math.round((cy + (Math.random() - 0.5) * ATTRACT_RADIUS) / GRID);
+        if (nearI >= 0 && nearI < cols && nearJ >= 0 && nearJ < rows) {
+          sparksRef.current.push({ i: nearI, j: nearJ, life: SPARK_MAX_LIFE });
+        }
+      }
 
-      // Vertical lines — each drawn as a path with per-point distortion
+      // -- Build a lookup for spark intensity at each node --
+      const sparkMap = new Map<string, number>();
+      sparksRef.current = sparksRef.current.filter(s => {
+        s.life--;
+        if (s.life <= 0) return false;
+        const norm = s.life / SPARK_MAX_LIFE; // 1 = fresh, 0 = dead
+        // bell curve: ramps up fast, fades slowly
+        const intensity = norm < 0.3
+          ? norm / 0.3
+          : (1 - norm) / 0.7;
+        const key = `${s.i},${s.j}`;
+        sparkMap.set(key, Math.max(sparkMap.get(key) ?? 0, intensity));
+        return true;
+      });
+
+      // Helper: displaced position for a grid node
+      const nodePos = (baseX: number, baseY: number) => {
+        // Passive wave — two overlapping sine waves for organic feel
+        const wx = Math.sin(baseY * WAVE_FREQ + t * WAVE_SPEED) * WAVE_AMP
+                 + Math.sin(baseX * WAVE_FREQ * 0.7 + t * WAVE_SPEED * 1.3) * WAVE_AMP * 0.4;
+        const wy = Math.cos(baseX * WAVE_FREQ + t * WAVE_SPEED * 0.9) * WAVE_AMP
+                 + Math.cos(baseY * WAVE_FREQ * 0.8 + t * WAVE_SPEED * 1.1) * WAVE_AMP * 0.4;
+
+        // Cursor attraction
+        let dx = 0, dy = 0;
+        if (cursorActive) {
+          const cdx = cx - baseX;
+          const cdy = cy - baseY;
+          const dist = Math.sqrt(cdx * cdx + cdy * cdy);
+          const inf  = Math.max(0, 1 - dist / ATTRACT_RADIUS);
+          const pull = inf * inf * ATTRACT_STRENGTH;
+          dx = cdx * pull;
+          dy = cdy * pull;
+        }
+
+        return { x: baseX + wx + dx, y: baseY + wy + dy };
+      };
+
+      // Helper: alpha for a line near the cursor
+      const lineAlpha = (perpDist: number, sparkBoost = 0) => {
+        const cursorInf = cursorActive
+          ? Math.max(0, 1 - perpDist / GLOW_RADIUS)
+          : 0;
+        const breath = 0.5 + 0.5 * Math.sin(t * 0.6);
+        return BASE_ALPHA * (0.7 + 0.3 * breath)
+             + (PEAK_ALPHA - BASE_ALPHA) * cursorInf
+             + 0.35 * sparkBoost;
+      };
+
+      // -- Draw vertical lines --
       for (let i = 0; i < cols; i++) {
-        const baseX = i * GRID_SIZE;
-        const segments = Math.ceil(h / 8);
+        const baseX = i * GRID;
+        const segCount = Math.ceil(h / 8);
         ctx.beginPath();
-        for (let s = 0; s <= segments; s++) {
-          const baseY = (s / segments) * h;
-          let px = baseX, py = baseY;
-          if (active) {
-            const dx = cx - baseX;
-            const dy = cy - baseY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const inf = Math.max(0, 1 - dist / DISTORT_RADIUS);
-            const pull = inf * inf * DISTORT_STRENGTH;
-            px += dx * pull;
-            py += dy * pull;
-          }
-          s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        for (let s = 0; s <= segCount; s++) {
+          const baseY = (s / segCount) * h;
+          const { x, y } = nodePos(baseX, baseY);
+          s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-        const colDist = active ? Math.abs(baseX - cx) : 9999;
-        const alpha = BASE_ALPHA + (PEAK_ALPHA - BASE_ALPHA) * Math.max(0, 1 - colDist / GLOW_RADIUS);
-        ctx.strokeStyle = `rgba(${EM_R},${EM_G},${EM_B},${alpha})`;
+        const perpDist = cursorActive ? Math.abs(baseX - cx) : 9999;
+        const alpha = lineAlpha(perpDist);
+        ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
-      // Horizontal lines — same treatment
+      // -- Draw horizontal lines --
       for (let j = 0; j < rows; j++) {
-        const baseY = j * GRID_SIZE;
-        const segments = Math.ceil(w / 8);
+        const baseY = j * GRID;
+        const segCount = Math.ceil(w / 8);
         ctx.beginPath();
-        for (let s = 0; s <= segments; s++) {
-          const baseX = (s / segments) * w;
-          let px = baseX, py = baseY;
-          if (active) {
-            const dx = cx - baseX;
-            const dy = cy - baseY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const inf = Math.max(0, 1 - dist / DISTORT_RADIUS);
-            const pull = inf * inf * DISTORT_STRENGTH;
-            px += dx * pull;
-            py += dy * pull;
-          }
-          s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        for (let s = 0; s <= segCount; s++) {
+          const baseX = (s / segCount) * w;
+          const { x, y } = nodePos(baseX, baseY);
+          s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-        const rowDist = active ? Math.abs(baseY - cy) : 9999;
-        const alpha = BASE_ALPHA + (PEAK_ALPHA - BASE_ALPHA) * Math.max(0, 1 - rowDist / GLOW_RADIUS);
-        ctx.strokeStyle = `rgba(${EM_R},${EM_G},${EM_B},${alpha})`;
+        const perpDist = cursorActive ? Math.abs(baseY - cy) : 9999;
+        const alpha = lineAlpha(perpDist);
+        ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
-      // Intersection dots — distorted position + glow
-      if (active) {
-        for (let i = 0; i < cols; i++) {
-          for (let j = 0; j < rows; j++) {
-            const baseX = i * GRID_SIZE;
-            const baseY = j * GRID_SIZE;
-            const dx = cx - baseX;
-            const dy = cy - baseY;
+      // -- Draw intersection nodes (sparks + cursor glow) --
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const baseX = i * GRID;
+          const baseY = j * GRID;
+          const spark = sparkMap.get(`${i},${j}`) ?? 0;
+
+          let cursorInf = 0;
+          if (cursorActive) {
+            const dx   = cx - baseX;
+            const dy   = cy - baseY;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const inf = Math.max(0, 1 - dist / GLOW_RADIUS);
-            if (inf < 0.05) continue;
-            const pull = Math.max(0, 1 - dist / DISTORT_RADIUS);
-            const px = baseX + dx * pull * pull * DISTORT_STRENGTH;
-            const py = baseY + dy * pull * pull * DISTORT_STRENGTH;
-            ctx.fillStyle = `rgba(${EM_R},${EM_G},${EM_B},${0.25 + 0.75 * inf})`;
+            cursorInf  = Math.max(0, 1 - dist / GLOW_RADIUS);
+          }
+
+          const totalIntensity = Math.min(1, spark + cursorInf * cursorInf);
+          if (totalIntensity < 0.04) continue;
+
+          const { x, y } = nodePos(baseX, baseY);
+          const radius = 1 + 3.5 * totalIntensity;
+          const alpha  = 0.2 + 0.8 * totalIntensity;
+
+          // Outer halo for bright sparks
+          if (totalIntensity > 0.5) {
             ctx.beginPath();
-            ctx.arc(px, py, 1 + 3 * inf, 0, Math.PI * 2);
+            ctx.arc(x, y, radius * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 0.15})`;
             ctx.fill();
           }
+
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
+          ctx.fill();
         }
       }
 
@@ -123,7 +203,6 @@ const HeroSection: React.FC = () => {
     };
 
     draw();
-
     return () => {
       cancelAnimationFrame(animRef.current);
       ro.disconnect();
@@ -134,10 +213,7 @@ const HeroSection: React.FC = () => {
     const rect = sectionRef.current?.getBoundingClientRect();
     if (rect) cursorRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
-
-  const handleMouseLeave = () => {
-    cursorRef.current = { x: -9999, y: -9999 };
-  };
+  const handleMouseLeave = () => { cursorRef.current = { x: -9999, y: -9999 }; };
 
   return (
     <section
@@ -146,12 +222,12 @@ const HeroSection: React.FC = () => {
       onMouseLeave={handleMouseLeave}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
     >
-      {/* Animated Grid Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10"></div>
       {/* Pulsing Glows */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 blur-[120px] rounded-full"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 blur-[120px] rounded-full"></div>
+
       <div className="relative z-20 container mx-auto px-6 text-center">
         <div className="inline-flex items-center space-x-2 bg-surface-container-low px-4 py-1.5 rounded-sm border border-outline-variant/30 mb-8">
           <span className="w-2 h-2 rounded-full bg-primary glow-pulse"></span>
@@ -166,14 +242,13 @@ const HeroSection: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
           <Link
             to="/dashboard"
-            className="group relative w-full md:w-auto px-12 py-5 bg-gradient-to-r from-primary to-primary-container text-white font-bold rounded-sm text-lg overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_-4px_rgba(78,222,163,0.7)] hover:scale-105 active:scale-100 text-center inline-flex items-center justify-center gap-3 border-2 border-primary/60"
+            className="group relative w-full md:w-auto px-12 py-5 bg-primary text-white font-bold rounded-sm text-lg overflow-hidden transition-all duration-300 hover:bg-primary-container hover:shadow-[0_0_40px_-4px_rgba(78,222,163,0.7)] hover:scale-105 active:scale-100 text-center inline-flex items-center justify-center gap-3 border-2 border-primary"
           >
             <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
             <span className="relative">See the Grid Live</span>
             <span className="material-symbols-outlined relative text-xl transition-transform duration-300 group-hover:translate-x-1" style={{fontVariationSettings: "'FILL' 1"}}>arrow_forward</span>
           </Link>
         </div>
-        {/* Floating Data Points Decoration */}
         <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           <div className="glass-card p-4 text-left">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Grid Intensity</span>
