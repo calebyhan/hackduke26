@@ -3,9 +3,10 @@ import type { BriefResponse } from "../../types/brief";
 
 interface AiBriefCardProps {
   brief: BriefResponse | null;
+  pctReduction?: number;
 }
 
-export default function AiBriefCard({ brief }: AiBriefCardProps) {
+export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
   return (
     <AnimatePresence>
       {brief ? (
@@ -24,7 +25,7 @@ export default function AiBriefCard({ brief }: AiBriefCardProps) {
             </div>
             <div className="mb-10">
               <span className="block font-headline text-xs font-medium text-primary mb-2 uppercase tracking-[0.2em]">{brief.headline}</span>
-              <h2 className="font-headline text-6xl font-extrabold tracking-tighter text-on-surface mb-2 tnum">{Math.round((brief.savings_vs_unoptimized / brief.weekly_co2_lbs) * 100)}% <span className="text-2xl font-light text-on-surface-variant">REDUCED</span></h2>
+              <h2 className="font-headline text-6xl font-extrabold tracking-tighter text-on-surface mb-2 tnum">{pctReduction ?? Math.round((brief.savings_vs_unoptimized / (brief.savings_vs_unoptimized + brief.weekly_co2_lbs)) * 100)}% <span className="text-2xl font-light text-on-surface-variant">REDUCED</span></h2>
               <p className="text-on-surface-variant/80 text-sm leading-relaxed max-w-sm">
                 {brief.grid_trend}
               </p>
@@ -49,7 +50,7 @@ export default function AiBriefCard({ brief }: AiBriefCardProps) {
               </div>
             </div>
             <div className="space-y-4">
-              {brief.nudges.slice(0, 2).map((nudge, i) => (
+              {brief.nudges.map((nudge, i) => (
                 <div key={i} className="flex gap-4 items-start group">
                   <div className="w-6 h-6 rounded-sm bg-primary/10 flex items-center justify-center mt-0.5 group-hover:bg-primary/20 transition-colors">
                     <span className="material-symbols-outlined text-[16px] text-primary">{i === 0 ? 'psychology' : 'warning'}</span>

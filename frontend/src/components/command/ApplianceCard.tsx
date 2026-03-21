@@ -78,11 +78,11 @@ export default function ApplianceCard({
           <div className="flex gap-4">
             <div>
               <span className="block text-[9px] uppercase tracking-widest text-on-surface-variant">CO2 Score</span>
-              <span className="font-headline font-bold text-primary tnum">{Math.round(scheduleEntry.avg_moer_lbs_per_mwh)}<span className="text-[10px] font-normal text-on-surface-variant/60">/100</span></span>
+              <span className="font-headline font-bold text-primary tnum">{Math.max(0, Math.min(100, Math.round(100 - (scheduleEntry.avg_moer_lbs_per_mwh - 200) / 9)))}<span className="text-[10px] font-normal text-on-surface-variant/60">/100</span></span>
             </div>
             <div>
               <span className="block text-[9px] uppercase tracking-widest text-on-surface-variant">Health Impact</span>
-              <span className="font-headline font-bold text-secondary tnum">{scheduleEntry.avg_health_score.toFixed(0)}<span className="text-[10px] font-normal text-on-surface-variant/60">/100</span></span>
+              <span className="font-headline font-bold text-secondary tnum">{Math.round(scheduleEntry.avg_health_score * 100)}<span className="text-[10px] font-normal text-on-surface-variant/60">/100</span></span>
             </div>
           </div>
           <button className="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors">edit_square</button>

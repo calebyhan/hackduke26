@@ -2,14 +2,16 @@ import { useState, useCallback } from "react";
 import type { ScheduleEntry } from "../../types/optimize";
 import type { OptimizeResponse } from "../../types/optimize";
 import type { BriefResponse } from "../../types/brief";
+import type { ForecastPoint } from "../../types/forecast";
+import type { Appliance } from "../../types/appliance";
 import {
   defaultAppliances,
   baselineSchedule,
 } from "../../fixtures/appliances";
-import { fixtureForecast } from "../../fixtures/forecast";
 import { fixtureOptimizeResult } from "../../fixtures/optimizeResult";
 import { fixtureBrief } from "../../fixtures/brief";
 import { useForecast } from "../../hooks/useForecast";
+
 import { useWeather } from "../../hooks/useWeather";
 import { fetchOptimize } from "../../api/optimize";
 import { fetchBrief } from "../../api/brief";
@@ -21,6 +23,24 @@ import CarbonCounter from "./CarbonCounter";
 import PolicyImpact from "./PolicyImpact";
 import ImpactProjection from "./ImpactProjection";
 import AutomationCta from "./AutomationCta";
+
+// Set shiftable appliances' preferred_start to the live forecast's peak MOER
+// hour so the optimizer always has a dirty baseline to improve from.
+function buildLiveAppliances(points: ForecastPoint[]): Appliance[] {
+  if (!points.length) return defaultAppliances;
+  const peakIdx = points.reduce(
+    (best, p, i) => (p.moer_lbs_per_mwh > points[best].moer_lbs_per_mwh ? i : best),
+    0
+  );
+  const peakStart = points[peakIdx].start;
+  const dryerStart = new Date(
+    new Date(peakStart).getTime() + 45 * 60 * 1000
+  ).toISOString();
+  return defaultAppliances.map((a) => {
+    if (!a.shiftable) return a;
+    return { ...a, preferred_start: a.id === "dryer" ? dryerStart : peakStart };
+  });
+}
 
 export default function CommandView() {
   const { forecast } = useForecast();
@@ -36,15 +56,15 @@ export default function CommandView() {
   const handleOptimize = useCallback(async () => {
     setIsOptimizing(true);
 
-    // Always use fixture forecast for optimization — the fixture appliances and
-    // fixture forecast are calibrated together for a compelling CO2 contrast.
-    // Live WattTime data is used only for the timeline display.
+    // Build appliances with preferred_start at today's live peak MOER hour,
+    // ensuring the optimizer always has a dirty baseline to improve from.
+    const liveAppliances = buildLiveAppliances(forecast.points);
     let result: OptimizeResponse;
     try {
       result = await fetchOptimize(
         forecast.region,
-        fixtureForecast.points,
-        defaultAppliances
+        forecast.points,
+        liveAppliances
       );
     } catch {
       // Fallback to fixture
@@ -156,7 +176,10 @@ export default function CommandView() {
         </div>
         {/* RIGHT COLUMN: TACTICAL BRIEFING */}
         <div className="flex flex-col gap-6">
-          <AiBriefCard brief={brief} />
+          <AiBriefCard
+            brief={brief}
+            pctReduction={optimizeResult ? Math.round((1 - optimizeResult.optimized.total_co2_lbs / optimizeResult.baseline.total_co2_lbs) * 100) : undefined}
+          />
         </div>
       </section>
       {/* SECONDARY ROW: POLICY IMPACT, SCALED IMPACT, AUTOMATION */}
