@@ -1,12 +1,101 @@
 <!doctype html>
-<html lang="en">
+<html class="dark" lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>GridGhost | The Grid Is Alive</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#373940",
+                        "on-primary": "#003824",
+                        "on-secondary-container": "#5b3800",
+                        "outline": "#86948a",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#33343b",
+                        "inverse-on-surface": "#2e3037",
+                        "on-tertiary-fixed": "#410004",
+                        "tertiary": "#ffb3ad",
+                        "on-secondary-fixed": "#2a1700",
+                        "surface-tint": "#4edea3",
+                        "inverse-surface": "#e2e2eb",
+                        "secondary-fixed": "#ffddb8",
+                        "primary-fixed": "#6ffbbe",
+                        "background": "#111319",
+                        "tertiary-fixed": "#ffdad7",
+                        "tertiary-container": "#ff7a73",
+                        "on-secondary-fixed-variant": "#653e00",
+                        "secondary-fixed-dim": "#ffb95f",
+                        "surface": "#111319",
+                        "primary": "#4edea3",
+                        "error": "#ffb4ab",
+                        "on-secondary": "#472a00",
+                        "surface-container-high": "#282a30",
+                        "on-primary-fixed-variant": "#005236",
+                        "primary-fixed-dim": "#4edea3",
+                        "on-primary-container": "#00422b",
+                        "inverse-primary": "#006c49",
+                        "surface-variant": "#33343b",
+                        "tertiary-fixed-dim": "#ffb3ad",
+                        "on-tertiary": "#68000a",
+                        "error-container": "#93000a",
+                        "on-surface": "#e2e2eb",
+                        "secondary": "#ffb95f",
+                        "on-surface-variant": "#bbcabf",
+                        "surface-container": "#1e1f26",
+                        "primary-container": "#10b981",
+                        "on-background": "#e2e2eb",
+                        "secondary-container": "#ee9800",
+                        "on-tertiary-fixed-variant": "#930013",
+                        "outline-variant": "#3c4a42",
+                        "surface-container-low": "#191b22",
+                        "on-primary-fixed": "#002113",
+                        "surface-dim": "#111319",
+                        "on-tertiary-container": "#79000e",
+                        "surface-container-lowest": "#0c0e14"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .living-grid {
+            background-image: 
+                linear-gradient(to right, rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glow-pulse {
+            box-shadow: 0 0 20px rgba(78, 222, 163, 0.2);
+        }
+        .tonal-shift-on-scroll {
+            transition: background-color 0.3s ease;
+        }
+        .glass-card {
+            background: rgba(30, 31, 38, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(134, 148, 138, 0.15);
+        }
+    </style>
   </head>
-  <body>
+  <body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

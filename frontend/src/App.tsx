@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import Navbar from "./components/layout/Navbar";
 import CommandView from "./components/command/CommandView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
@@ -6,12 +6,12 @@ import AnalyticsView from "./components/analytics/AnalyticsView";
 export type Tab = "command" | "analytics";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("command");
+  const [activeTab, setActiveTab] = React.useState<Tab>("command");
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary">
+    <div className="min-h-screen">
       <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="px-4 pb-8 max-w-[1400px] mx-auto">
+      <main className="pt-16">
         {activeTab === "command" ? <CommandView /> : <AnalyticsView />}
       </main>
     </div>

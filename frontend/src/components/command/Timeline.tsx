@@ -54,69 +54,13 @@ export default function Timeline({
   );
 
   return (
-    <div className="bg-bg-card rounded-xl p-4">
-      {/* Gradient bar */}
-      <div className="relative">
-        <div
-          className="h-12 rounded-lg w-full"
-          style={{ background: gradient }}
-        />
-
-        {/* Appliance chips */}
-        <div className="relative h-10 mt-1">
-          {schedule.map((entry) => {
-            const appliance = applianceMap[entry.appliance_id];
-            if (!appliance) return null;
-
-            const left = timeToFraction(entry.start, dayStart) * 100;
-            const width =
-              durationToFraction(appliance.duration_minutes) * 100;
-
-            return (
-              <motion.div
-                key={entry.appliance_id}
-                layoutId={entry.appliance_id}
-                className="absolute top-0 h-8 rounded-md flex items-center px-2 text-xs font-medium text-white truncate cursor-default"
-                style={{
-                  left: `${left}%`,
-                  width: `${Math.max(width, 3)}%`,
-                  backgroundColor: CHIP_COLORS[entry.appliance_id] ?? "#6b7280",
-                  opacity: appliance.shiftable ? 1 : 0.6,
-                }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-              >
-                {appliance.name}
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Time ticks */}
-        <div className="relative h-5 mt-1">
-          {ticks.map(({ label, pct }) => (
-            <span
-              key={label}
-              className="absolute text-[10px] text-text-muted -translate-x-1/2"
-              style={{ left: `${pct}%` }}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-emerald inline-block" /> Clean
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-amber inline-block" /> Moderate
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-crimson inline-block" /> Dirty
-        </span>
-      </div>
-    </div>
+    <svg className="w-full h-32 overflow-visible" preserveAspectRatio="none">
+      <path className="text-primary glow-emerald" d="M0,100 Q150,20 300,80 T600,40 T900,110 T1200,60 T1500,90" fill="none" stroke="currentColor" strokeWidth="2"></path>
+      <path className="text-on-surface-variant/20" d="M0,105 Q150,25 300,85 T600,45 T900,115 T1200,65 T1500,95" fill="none" stroke="currentColor" strokeWidth="1"></path>
+      {/* Time Markers */}
+      <circle className="fill-primary" cx="0" cy="100" r="4"></circle>
+      <circle className="fill-secondary glow-amber" cx="300" cy="80" r="4"></circle>
+      <circle className="fill-tertiary glow-crimson" cx="900" cy="110" r="4"></circle>
+    </svg>
   );
 }
