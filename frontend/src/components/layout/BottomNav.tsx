@@ -18,9 +18,9 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         <span className="material-symbols-outlined">electric_bolt</span>
         <span className="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Grid</span>
       </a>
-      <a className="flex flex-col items-center justify-center text-[#e2e2eb]/40 px-4 py-1 hover:bg-[#1e1f26] hover:text-[#4edea3] active:scale-90 transition-transform">
-        <span className="material-symbols-outlined">timeline</span>
-        <span className="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Forecast</span>
+      <a className={clsx("flex flex-col items-center justify-center rounded-sm px-4 py-1 active:scale-90 transition-transform", activeTab === "community" ? "bg-[#10b981]/10 text-[#4edea3] shadow-[0_0_12px_rgba(16,185,129,0.2)]" : "text-[#e2e2eb]/40 hover:bg-[#1e1f26] hover:text-[#4edea3]")} onClick={() => onTabChange("community")}>
+        <span className="material-symbols-outlined">groups</span>
+        <span className="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Impact</span>
       </a>
       <a className="flex flex-col items-center justify-center text-[#e2e2eb]/40 px-4 py-1 hover:bg-[#1e1f26] hover:text-[#4edea3] active:scale-90 transition-transform">
         <span className="material-symbols-outlined">settings</span>

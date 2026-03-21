@@ -46,6 +46,10 @@ def _normalize_forecast(raw: dict) -> ForecastResponse:
             )
         )
 
+    # If all values are zero, WattTime account lacks forecast access — treat as invalid
+    if points and all(p.moer_lbs_per_mwh == 0.0 for p in points):
+        raise ValueError("WattTime returned all-zero MOER values (insufficient account access)")
+
     return ForecastResponse(
         region=raw.get("region", "CAISO_NORTH"),
         generated_at=datetime.now(timezone.utc).isoformat(),
@@ -60,6 +64,10 @@ async def get_forecast() -> ForecastResponse:
     raw = await watttime_client.get_forecast("CAISO_NORTH")
     try:
         return _normalize_forecast(raw)
+    except ValueError:
+        # Fall back to fixture when live data is unavailable or invalid
+        fixture_raw = watttime_client._load_fixture("forecast.json")
+        return _normalize_forecast(fixture_raw)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Forecast normalization failed: {e}")
 

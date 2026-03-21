@@ -107,7 +107,7 @@ class WattTimeClient:
             token = await self._ensure_token()
             resp = await self._client.get(
                 f"{API_V3}/signal-index",
-                params={"region": region},
+                params={"region": region, "signal_type": "co2_moer"},
                 headers=self._auth_headers(token),
             )
             resp.raise_for_status()
@@ -116,7 +116,7 @@ class WattTimeClient:
             logger.warning("WattTime signal-index failed: %s", e)
             return {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "regions": [{"ba": region, "index": 50}],
+                "data": [{"value": 0.5}],
             }
 
     def _load_fixture(self, filename: str) -> dict:

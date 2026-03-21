@@ -1,7 +1,7 @@
 import type { Tab } from "../../App";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
-import { useForecast } from "../../hooks/useForecast";
+import { useSignalIndex } from "../../hooks/useSignalIndex";
 import { moerToColor, moerToLabel } from "../../utils/colors";
 
 interface NavbarProps {
@@ -10,9 +10,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
-  const { forecast } = useForecast();
-  const currentPoint = forecast.points[0];
-  const moer = currentPoint?.moer_lbs_per_mwh;
+  const { moer } = useSignalIndex();
   const moerColor = moer != null ? moerToColor(moer) : "#6b7280";
   const moerLabel = moer != null ? moerToLabel(moer) : null;
 
@@ -23,6 +21,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         <nav className="hidden md:flex gap-6 items-center h-full pt-1">
           <a className={clsx("uppercase text-xs tracking-widest transition-colors cursor-pointer border-b-2 pb-1", activeTab === "command" ? "text-emerald-400 border-emerald-500 font-bold" : "text-slate-500 border-transparent hover:text-emerald-300")} onClick={() => onTabChange("command")}>Command</a>
           <a className={clsx("uppercase text-xs tracking-widest transition-colors cursor-pointer border-b-2 pb-1", activeTab === "analytics" ? "text-emerald-400 border-emerald-500 font-bold" : "text-slate-500 border-transparent hover:text-emerald-300")} onClick={() => onTabChange("analytics")}>Grid Analytics</a>
+          <a className={clsx("uppercase text-xs tracking-widest transition-colors cursor-pointer border-b-2 pb-1", activeTab === "community" ? "text-emerald-400 border-emerald-500 font-bold" : "text-slate-500 border-transparent hover:text-emerald-300")} onClick={() => onTabChange("community")}>Impact</a>
         </nav>
       </div>
 

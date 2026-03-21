@@ -6,6 +6,9 @@ import { fixtureForecast } from "../fixtures/forecast";
 async function loadForecast(): Promise<{ data: ForecastResponse; error: boolean }> {
   try {
     const { data } = await apiClient.get<ForecastResponse>("/api/forecast");
+    // If the API returns all-zero MOER values (free-tier WattTime account), use fixture
+    const hasRealData = data.points?.some((p) => p.moer_lbs_per_mwh > 0);
+    if (!hasRealData) return { data: fixtureForecast, error: true };
     return { data, error: false };
   } catch {
     return { data: fixtureForecast, error: true };

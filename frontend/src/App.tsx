@@ -5,8 +5,9 @@ import TechnologyPage from "./pages/TechnologyPage";
 import Navbar from "./components/layout/Navbar";
 import CommandView from "./components/command/CommandView";
 import AnalyticsView from "./components/analytics/AnalyticsView";
+import CommunityView from "./components/community/CommunityView";
 
-export type Tab = "command" | "analytics";
+export type Tab = "command" | "analytics" | "community";
 
 function Dashboard() {
   const [activeTab, setActiveTab] = React.useState<Tab>("command");
@@ -15,7 +16,9 @@ function Dashboard() {
     <div className="min-h-screen">
       <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="pt-16">
-        {activeTab === "command" ? <CommandView /> : <AnalyticsView />}
+        {activeTab === "command" && <CommandView />}
+        {activeTab === "analytics" && <AnalyticsView />}
+        {activeTab === "community" && <CommunityView />}
       </main>
     </div>
   );
