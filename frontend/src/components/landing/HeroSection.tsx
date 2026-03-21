@@ -49,6 +49,18 @@ const HeroSection: React.FC = () => {
     const ro = new ResizeObserver(setSize);
     ro.observe(canvas);
 
+    // Track global mouse movement
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const canvasX = e.clientX - rect.left;
+      const canvasY = e.clientY - rect.top;
+      
+      // Update cursor even if outside canvas (to create effect in blank space below)
+      cursorRef.current = { x: canvasX, y: canvasY };
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+
     const draw = () => {
       const t  = timeRef.current += 0.016;
       const w  = canvas.offsetWidth;
@@ -138,8 +150,11 @@ const HeroSection: React.FC = () => {
           const { x, y } = nodePos(baseX, baseY);
           s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-        const perpDist = cursorActive ? Math.abs(baseX - cx) : 9999;
-        const alpha = lineAlpha(perpDist);
+        // Distance to nearest point on this vertical line
+        const dist = cursorActive 
+          ? Math.abs(baseX - cx)
+          : 9999;
+        const alpha = lineAlpha(dist);
         ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -155,8 +170,11 @@ const HeroSection: React.FC = () => {
           const { x, y } = nodePos(baseX, baseY);
           s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-        const perpDist = cursorActive ? Math.abs(baseY - cy) : 9999;
-        const alpha = lineAlpha(perpDist);
+        // Distance to nearest point on this horizontal line
+        const dist = cursorActive 
+          ? Math.abs(baseY - cy)
+          : 9999;
+        const alpha = lineAlpha(dist);
         ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -206,20 +224,13 @@ const HeroSection: React.FC = () => {
     return () => {
       cancelAnimationFrame(animRef.current);
       ro.disconnect();
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
     };
   }, []);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = sectionRef.current?.getBoundingClientRect();
-    if (rect) cursorRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  };
-  const handleMouseLeave = () => { cursorRef.current = { x: -9999, y: -9999 }; };
 
   return (
     <section
       ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
     >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0" />
