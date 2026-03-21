@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Custom app colors */
   --color-bg: #0f1117;
   --color-bg-card: #1a1b23;
   --color-bg-card-hover: #22232d;
@@ -15,6 +16,66 @@
   --color-crimson: #ef4444;
   --color-crimson-dim: #7f1d1d;
   --color-accent: #3b82f6;
+
+  /* Material Design theme colors (migrated from index.html tailwind.config) */
+  --color-surface-bright: #373940;
+  --color-on-primary: #003824;
+  --color-on-secondary-container: #5b3800;
+  --color-outline: #86948a;
+  --color-on-error-container: #ffdad6;
+  --color-on-error: #690005;
+  --color-surface-container-highest: #33343b;
+  --color-inverse-on-surface: #2e3037;
+  --color-on-tertiary-fixed: #410004;
+  --color-tertiary: #ffb3ad;
+  --color-on-secondary-fixed: #2a1700;
+  --color-surface-tint: #4edea3;
+  --color-inverse-surface: #e2e2eb;
+  --color-secondary-fixed: #ffddb8;
+  --color-primary-fixed: #6ffbbe;
+  --color-background: #111319;
+  --color-tertiary-fixed: #ffdad7;
+  --color-tertiary-container: #ff7a73;
+  --color-on-secondary-fixed-variant: #653e00;
+  --color-secondary-fixed-dim: #ffb95f;
+  --color-surface: #111319;
+  --color-primary: #4edea3;
+  --color-error: #ffb4ab;
+  --color-on-secondary: #472a00;
+  --color-surface-container-high: #282a30;
+  --color-on-primary-fixed-variant: #005236;
+  --color-primary-fixed-dim: #4edea3;
+  --color-on-primary-container: #00422b;
+  --color-inverse-primary: #006c49;
+  --color-surface-variant: #33343b;
+  --color-tertiary-fixed-dim: #ffb3ad;
+  --color-on-tertiary: #68000a;
+  --color-error-container: #93000a;
+  --color-on-surface: #e2e2eb;
+  --color-secondary: #ffb95f;
+  --color-on-surface-variant: #bbcabf;
+  --color-surface-container: #1e1f26;
+  --color-primary-container: #10b981;
+  --color-on-background: #e2e2eb;
+  --color-secondary-container: #ee9800;
+  --color-on-tertiary-fixed-variant: #930013;
+  --color-outline-variant: #3c4a42;
+  --color-surface-container-low: #191b22;
+  --color-on-primary-fixed: #002113;
+  --color-surface-dim: #111319;
+  --color-on-tertiary-container: #79000e;
+  --color-surface-container-lowest: #0c0e14;
+
+  /* Fonts */
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+
+  /* Border radius */
+  --radius: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
 }
 
 body {
