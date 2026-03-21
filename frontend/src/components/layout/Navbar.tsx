@@ -1,4 +1,5 @@
 import type { Tab } from "../../App";
+import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { useForecast } from "../../hooks/useForecast";
 import { moerToColor, moerToLabel } from "../../utils/colors";
@@ -18,14 +19,14 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
   return (
     <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#111319] dark:bg-[#111319] border-b border-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.1)] font-['Space_Grotesk'] tracking-tight text-on-surface">
       <div className="flex items-center gap-8">
-        <span className="text-2xl font-bold tracking-tighter text-emerald-500 uppercase">GridGhost</span>
+        <Link to="/" className="text-2xl font-bold tracking-tighter text-emerald-500 uppercase hover:text-emerald-400 transition-colors">GridGhost</Link>
         <nav className="hidden md:flex gap-6 items-center h-full pt-1">
-          <a className={clsx("uppercase text-xs tracking-widest transition-colors", activeTab === "command" ? "text-emerald-400 border-b-2 border-emerald-500 pb-1 font-bold" : "text-slate-500 hover:text-emerald-300")} onClick={() => onTabChange("command")}>Command</a>
-          <a className={clsx("uppercase text-xs tracking-widest transition-colors", activeTab === "analytics" ? "text-emerald-400 border-b-2 border-emerald-500 pb-1 font-bold" : "text-slate-500 hover:text-emerald-300")} onClick={() => onTabChange("analytics")}>Grid Analytics</a>
+          <a className={clsx("uppercase text-xs tracking-widest transition-colors cursor-pointer border-b-2 pb-1", activeTab === "command" ? "text-emerald-400 border-emerald-500 font-bold" : "text-slate-500 border-transparent hover:text-emerald-300")} onClick={() => onTabChange("command")}>Command</a>
+          <a className={clsx("uppercase text-xs tracking-widest transition-colors cursor-pointer border-b-2 pb-1", activeTab === "analytics" ? "text-emerald-400 border-emerald-500 font-bold" : "text-slate-500 border-transparent hover:text-emerald-300")} onClick={() => onTabChange("analytics")}>Grid Analytics</a>
         </nav>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
         {moer != null && (
           <div className="flex items-center gap-2 text-sm">
             <span
@@ -40,21 +41,16 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
           </div>
         )}
 
-        <div className="flex bg-bg-card rounded-lg p-0.5">
-          {(["command", "analytics"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className={clsx(
-                "px-4 py-1.5 text-sm rounded-md transition-colors capitalize",
-                activeTab === tab
-                  ? "bg-bg-card-hover text-text-primary"
-                  : "text-text-muted hover:text-text-secondary"
-              )}
-            >
-              {tab === "command" ? "Command" : "Grid Analytics"}
-            </button>
-          ))}
+        <div className="flex items-center gap-1">
+          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+            <span className="material-symbols-outlined text-[20px]">sensors</span>
+          </button>
+          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+          </button>
+          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+            <span className="material-symbols-outlined text-[20px]">account_circle</span>
+          </button>
         </div>
       </div>
     </header>

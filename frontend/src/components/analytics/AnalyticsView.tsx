@@ -1,6 +1,8 @@
 import GenerationMixChart from "./GenerationMixChart";
 import DualSignalChart from "./DualSignalChart";
 import MoerHistoryChart from "./MoerHistoryChart";
+import { useForecast } from "../../hooks/useForecast";
+import { useGenerationMix } from "../../hooks/useGenerationMix";
 
 export default function AnalyticsView() {
   const { forecast } = useForecast();

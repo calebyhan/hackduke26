@@ -22,7 +22,7 @@ const FeaturesSection: React.FC = () => {
             </div>
           </div>
           {/* Card 2 */}
-          <div className="glass-card p-10 flex flex-col justify-between group bg-gradient-to-br from-surface-container to-surface-container-high border-primary/20">
+          <div className="glass-card p-10 flex flex-col justify-between group bg-gradient-to-br from-surface-container to-surface-container-high border-primary/20 hover:border-primary/50 transition-all">
             <div>
               <span className="material-symbols-outlined text-4xl text-secondary mb-6" style={{fontVariationSettings: "'FILL' 1"}}>health_and_safety</span>
               <h3 className="text-2xl font-headline font-bold mb-4">Dual Signal Optimization</h3>
