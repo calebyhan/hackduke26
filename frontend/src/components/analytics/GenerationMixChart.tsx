@@ -68,7 +68,7 @@ export default function GenerationMixChart({ data }: GenerationMixChartProps) {
               "Generation",
             ]}
           />
-          <Bar dataKey="mw" radius={[0, 4, 4, 0]}>
+          <Bar dataKey="mw" radius={[0, 4, 4, 0]} activeBar={false}>
             {chartData.map((entry) => (
               <Cell
                 key={entry.fuel}

@@ -10,6 +10,7 @@ import { fixtureForecast } from "../../fixtures/forecast";
 import { fixtureOptimizeResult } from "../../fixtures/optimizeResult";
 import { fixtureBrief } from "../../fixtures/brief";
 import { useForecast } from "../../hooks/useForecast";
+import { useWeather } from "../../hooks/useWeather";
 import { fetchOptimize } from "../../api/optimize";
 import { fetchBrief } from "../../api/brief";
 import Timeline from "./Timeline";
@@ -23,7 +24,8 @@ import AutomationCta from "./AutomationCta";
 import SourceBadge from "./SourceBadge";
 
 export default function CommandView() {
-  const { forecast } = useForecast();
+  const { forecast, error: forecastError, refresh: refreshForecast } = useForecast();
+  const { weather } = useWeather();
   const [schedule, setSchedule] = useState<ScheduleEntry[]>(baselineSchedule);
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResponse | null>(
     null
@@ -111,11 +113,12 @@ export default function CommandView() {
             </div>
           </div>
           {/* Subtle Temperature/MOER Line Visualization Placeholder */}
-          <div className="flex-grow flex items-end mb-8 relative">
+          <div className="flex-grow flex items-end mb-8 relative w-full">
             <Timeline
               forecast={forecast}
               schedule={schedule}
               appliances={defaultAppliances}
+              weather={weather}
             />
           </div>
           {/* Time Axis */}

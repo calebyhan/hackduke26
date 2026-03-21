@@ -61,7 +61,7 @@ async def get_generation_mix() -> dict:
         for row in rows:
             fuel = (row.get("fueltype") or row.get("fuel-type") or "other").lower().replace(" ", "_")
             try:
-                mw = float(row.get("value") or 0)
+                mw = max(0.0, float(row.get("value") or 0))
             except (TypeError, ValueError):
                 mw = 0.0
             fuel_mw[fuel] = fuel_mw.get(fuel, 0.0) + mw

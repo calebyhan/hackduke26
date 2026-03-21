@@ -88,6 +88,7 @@ export default function DualSignalChart({ forecast }: DualSignalChartProps) {
             stroke="#ef4444"
             strokeWidth={2}
             dot={false}
+            activeDot={false}
             name="MOER"
           />
           <Line
@@ -97,6 +98,7 @@ export default function DualSignalChart({ forecast }: DualSignalChartProps) {
             stroke="#f59e0b"
             strokeWidth={2}
             dot={false}
+            activeDot={false}
             name="Health"
           />
         </ComposedChart>

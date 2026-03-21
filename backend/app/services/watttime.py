@@ -80,6 +80,28 @@ class WattTimeClient:
             # Fall back to fixture
             return self._load_fixture("forecast.json")
 
+    async def get_moer_history(self, region: str = "CAISO_NORTH", days: int = 7) -> dict:
+        try:
+            token = await self._ensure_token()
+            end = datetime.now(timezone.utc)
+            start = end - timedelta(days=days)
+            resp = await self._client.get(
+                f"{API_V3}/historical",
+                params={
+                    "region": region,
+                    "signal_type": "co2_moer",
+                    "start": start.isoformat(),
+                    "end": end.isoformat(),
+                },
+                headers=self._auth_headers(token),
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return {**data, "source": "live"}
+        except Exception as e:
+            logger.warning("WattTime historical failed: %s — using fallback", e)
+            return self._load_fixture("moer_history.json")
+
     async def get_signal_index(self, region: str = "CAISO_NORTH") -> dict:
         try:
             token = await self._ensure_token()
