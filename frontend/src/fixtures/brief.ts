@@ -1,0 +1,23 @@
+import type { BriefResponse } from "../types/brief";
+
+export const fixtureBrief: BriefResponse = {
+  headline: "You cut carbon by 31% with schedule shifts",
+  weekly_co2_lbs: 28.9,
+  savings_vs_unoptimized: 12.9,
+  miles_equivalent: 16,
+  dr_readiness: {
+    label: "Demand-Response Readiness",
+    qualified_windows: 4,
+    total_windows: 6,
+    estimated_bill_credit_usd: 4.2,
+    program: "CAISO_ELRP_signal",
+    eligibility_note: "Potentially eligible, utility enrollment required",
+  },
+  nudges: [
+    "Charge EV overnight when the grid is cleaner.",
+    "Run dishwasher before morning demand ramps.",
+  ],
+  grid_trend:
+    "Afternoon periods are forecast dirtier due to heat-driven demand.",
+  source: "fallback",
+};
