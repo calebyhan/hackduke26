@@ -9,7 +9,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://api.watttime.org/v3"
+BASE_URL = "https://api.watttime.org"
+API_V3 = "/v3"
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 
@@ -58,8 +59,8 @@ class WattTimeClient:
         try:
             token = await self._ensure_token()
             resp = await self._client.get(
-                "/forecast",
-                params={"region": region},
+                f"{API_V3}/forecast",
+                params={"region": region, "signal_type": "co2_moer", "horizon_hours": 24},
                 headers=self._auth_headers(token),
             )
             resp.raise_for_status()
@@ -83,7 +84,7 @@ class WattTimeClient:
         try:
             token = await self._ensure_token()
             resp = await self._client.get(
-                "/signal-index",
+                f"{API_V3}/signal-index",
                 params={"region": region},
                 headers=self._auth_headers(token),
             )

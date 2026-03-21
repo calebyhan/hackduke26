@@ -55,11 +55,18 @@ async def generate_brief(req: BriefRequest) -> BriefResponse:
             config=types.GenerateContentConfig(
                 system_instruction=_SYSTEM_PROMPT,
                 response_mime_type="application/json",
-                max_output_tokens=1000,
+                max_output_tokens=4096,
                 temperature=0.3,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
-        raw = response.text
+        raw = response.text.strip()
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.rsplit("```", 1)[0].strip()
         data = json.loads(raw)
         data["source"] = "gemini"
         return BriefResponse(**data)
