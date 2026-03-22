@@ -33,7 +33,7 @@ export default function DuckCurveChart({ n }: DuckCurveChartProps) {
   const data = useMemo(() => computeDuckCurve(n), [n]);
 
   return (
-    <div className="w-full flex flex-col gap-2">
+    <div className="w-full flex flex-col gap-2" onMouseDown={e => e.preventDefault()}>
       <div className="flex items-center justify-between">
         <span className="font-['Space_Grotesk'] text-[10px] uppercase tracking-[0.2em] text-[#86948a]">
           CAISO Grid Load Profile
@@ -51,7 +51,7 @@ export default function DuckCurveChart({ n }: DuckCurveChartProps) {
       </div>
 
       <ResponsiveContainer width="100%" height={180}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} tabIndex={-1}>
           <defs>
             <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />

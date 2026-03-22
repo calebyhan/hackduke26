@@ -65,16 +65,20 @@ export interface DuckCurvePoint {
 
 export function computeDuckCurve(n: number): DuckCurvePoint[] {
   const eff = diversityFactor(n);
-  // Each household shifts PEAK_KW_SHIFTED kW out of 5–9pm (hours 17–21)
-  // and into overnight valley (hours 1–5)
-  const shiftMw = (n * PEAK_KW_SHIFTED / 1000) * eff;
-  // Normalize shift against a "100K household = 150MW" reference scale
-  const normalizedShift = shiftMw / 150;
+  // Scale effect logarithmically so it's visually meaningful across the full
+  // slider range (100 → 100K). At 100 households the grid impact is near-zero;
+  // at 100K it's a meaningful fraction of peak load.
+  const LOG_MIN = Math.log10(100);
+  const LOG_MAX = Math.log10(100_000);
+  const logRatio = (Math.log10(Math.max(100, n)) - LOG_MIN) / (LOG_MAX - LOG_MIN);
+  // Square the ratio so small adoption stays near-zero and impact only becomes
+  // dramatic at 10K–100K scale — tells a clearer story for the demo
+  const scaledShift = Math.pow(logRatio, 2) * eff;
 
   return BASELINE_LOAD_PROFILE.map((load, hour) => {
     let delta = 0;
-    if (hour >= 17 && hour <= 21) delta = -normalizedShift * 12; // remove from peak
-    if (hour >= 1 && hour <= 5) delta = normalizedShift * 6;     // add to valley
+    if (hour >= 17 && hour <= 21) delta = -scaledShift * 18; // remove from peak
+    if (hour >= 1 && hour <= 5) delta = scaledShift * 9;     // add to valley
     const label = `${String(hour).padStart(2, "0")}:00`;
     return {
       hour,
