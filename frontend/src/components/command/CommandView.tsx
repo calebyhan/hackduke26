@@ -23,6 +23,54 @@ import ImpactProjection from "./ImpactProjection";
 import AutomationCta from "./AutomationCta";
 import SourceBadge from "./SourceBadge";
 
+function getPtDateKey(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date(iso));
+}
+
+function dayDiffFromDateKeys(fromDate: string, toDate: string): number {
+  const from = new Date(`${fromDate}T00:00:00Z`).getTime();
+  const to = new Date(`${toDate}T00:00:00Z`).getTime();
+  return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
+
+function shiftIsoDays(iso: string | undefined, days: number): string | undefined {
+  if (!iso || days === 0) return iso;
+  return new Date(new Date(iso).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function rebaseAppliancesToToday(appliances: Appliance[], todayPtDate: string): { data: Appliance[]; changed: boolean } {
+  let changed = false;
+  const data = appliances.map((a) => {
+    const anchor = a.preferred_start ?? a.earliest_start ?? a.deadline;
+    if (!anchor) return a;
+    const days = dayDiffFromDateKeys(getPtDateKey(anchor), todayPtDate);
+    if (days === 0) return a;
+    changed = true;
+    return {
+      ...a,
+      preferred_start: shiftIsoDays(a.preferred_start, days),
+      earliest_start: shiftIsoDays(a.earliest_start, days),
+      deadline: shiftIsoDays(a.deadline, days),
+    };
+  });
+  return { data, changed };
+}
+
+function rebaseScheduleToToday(schedule: ScheduleEntry[], todayPtDate: string): { data: ScheduleEntry[]; changed: boolean } {
+  let changed = false;
+  const data = schedule.map((s) => {
+    const days = dayDiffFromDateKeys(getPtDateKey(s.start), todayPtDate);
+    if (days === 0) return s;
+    changed = true;
+    return {
+      ...s,
+      start: new Date(new Date(s.start).getTime() + days * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date(new Date(s.end).getTime() + days * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  });
+  return { data, changed };
+}
+
 function buildLiveAppliances(appliances: Appliance[], points: ForecastPoint[]): Appliance[] {
   if (!points.length) return appliances;
   const peakIdx = points.reduce(
@@ -60,10 +108,18 @@ export default function CommandView() {
   const [isOptimized, setIsOptimized] = useState(false);
 
   const handleOptimize = useCallback(async () => {
-    const preOptimizeSchedule = schedule;
-    setBaselineSchedule(schedule);
+    const todayPtDate = getPtDateKey(new Date().toISOString());
+    const rebasedAppliances = rebaseAppliancesToToday(appliances, todayPtDate);
+    const rebasedSchedule = rebaseScheduleToToday(schedule, todayPtDate);
+    const activeAppliances = rebasedAppliances.data;
+    const preOptimizeSchedule = rebasedSchedule.data;
+
+    if (rebasedAppliances.changed) setAppliances(activeAppliances);
+    if (rebasedSchedule.changed) setSchedule(preOptimizeSchedule);
+
+    setBaselineSchedule(preOptimizeSchedule);
     setIsOptimizing(true);
-    const liveAppliances = buildLiveAppliances(appliances, forecast.points);
+    const liveAppliances = buildLiveAppliances(activeAppliances, forecast.points);
     let result: OptimizeResponse;
     try {
       result = await fetchOptimize(
@@ -82,14 +138,14 @@ export default function CommandView() {
     // Brief appears after animation completes
     setTimeout(async () => {
       try {
-        const briefResult = await fetchBrief(result, appliances, preOptimizeSchedule, weather);
+        const briefResult = await fetchBrief(result, activeAppliances, preOptimizeSchedule, weather);
         setBrief(briefResult);
       } catch {
         setBrief(fixtureBrief);
       }
       setIsOptimizing(false);
     }, 1800);
-  }, [forecast, appliances, schedule]);
+  }, [forecast, appliances, schedule, weather]);
 
   const handleReset = useCallback(() => {
     setSchedule(computeBaseline(appliances));
