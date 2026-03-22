@@ -310,23 +310,27 @@ const TechnologyPage: React.FC = () => {
                 { name: 'Dishwasher', start: 11, dur: 2, color: 'bg-secondary' },
                 { name: 'EV Charge', start: 22, dur: 3, color: 'bg-secondary/70' },
                 { name: 'HVAC', start: 7, dur: 2, color: 'bg-primary/50' },
-              ].map((item) => (
-                <div key={item.name} className="flex items-center gap-3 mb-3">
-                  <span className="text-[10px] text-on-surface-variant w-20 text-right flex-shrink-0">{item.name}</span>
-                  <div className="flex-1 h-6 bg-surface-container-lowest rounded-sm relative">
-                    <motion.div
-                      variants={scheduleBarVariants}
-                      className={`absolute top-0 h-full ${item.color} rounded-sm flex items-center px-2 origin-left`}
-                      style={{
-                        left: `${(item.start / 24) * 100}%`,
-                        width: `${(item.dur / 24) * 100}%`,
-                      }}
-                    >
-                      <span className="text-[9px] text-white font-bold whitespace-nowrap overflow-hidden">{item.start}:00</span>
-                    </motion.div>
+              ].map((item) => {
+                const clampedDuration = Math.max(0, Math.min(item.dur, 24 - item.start));
+
+                return (
+                  <div key={item.name} className="flex items-center gap-3 mb-3">
+                    <span className="text-[10px] text-on-surface-variant w-20 text-right flex-shrink-0">{item.name}</span>
+                    <div className="flex-1 h-6 bg-surface-container-lowest rounded-sm relative">
+                      <motion.div
+                        variants={scheduleBarVariants}
+                        className={`absolute top-0 h-full ${item.color} rounded-sm flex items-center px-2 origin-left`}
+                        style={{
+                          left: `${(item.start / 24) * 100}%`,
+                          width: `${(clampedDuration / 24) * 100}%`,
+                        }}
+                      >
+                        <span className="text-[9px] text-white font-bold whitespace-nowrap overflow-hidden">{item.start}:00</span>
+                      </motion.div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </motion.div>
             <div className="flex justify-between mt-4 px-20">
               {['0', '6', '12', '18', '24'].map((h) => (
