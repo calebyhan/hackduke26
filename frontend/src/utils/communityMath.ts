@@ -78,7 +78,6 @@ export function computeDuckCurve(n: number): DuckCurvePoint[] {
   return BASELINE_LOAD_PROFILE.map((load, hour) => {
     let delta = 0;
     if (hour >= 17 && hour <= 21) delta = -scaledShift * 18; // remove from peak
-    if (hour >= 1 && hour <= 5) delta = scaledShift * 9;     // add to valley
     const label = `${String(hour).padStart(2, "0")}:00`;
     return {
       hour,
