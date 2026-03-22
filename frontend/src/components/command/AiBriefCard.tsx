@@ -34,7 +34,7 @@ export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
               <div className="w-px h-10 bg-outline-variant/30"></div>
               <div className="flex flex-col">
                 <span className="font-headline text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Carbon Offset</span>
-                <span className="font-headline text-2xl font-bold tnum">{brief.savings_vs_unoptimized} <span className="text-xs font-normal text-on-surface-variant uppercase">kg</span></span>
+                <span className="font-headline text-2xl font-bold tnum">{brief.savings_vs_unoptimized} <span className="text-xs font-normal text-on-surface-variant uppercase">lbs</span></span>
               </div>
               <div className="w-px h-10 bg-outline-variant/30"></div>
               <div className="flex flex-col">
@@ -60,7 +60,7 @@ export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
           </div>
           <div className="mt-8 pt-8 border-t border-outline-variant/15 flex justify-between items-center">
             <span className="font-headline text-[10px] uppercase tracking-widest text-on-surface-variant">Update Alpha-7.2</span>
-            <button className="text-primary font-headline text-[10px] font-bold uppercase tracking-widest hover:underline underline-offset-4 transition-all">Download Full Report</button>
+            <span className="text-on-surface-variant/30 font-headline text-[10px] uppercase tracking-widest">GridGhost Alpha</span>
           </div>
         </motion.div>
       ) : (
@@ -82,7 +82,7 @@ export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
               <div className="w-px h-10 bg-outline-variant/15"></div>
               <div className="flex flex-col">
                 <span className="font-headline text-[10px] uppercase tracking-widest text-on-surface-variant/40 mb-1">Carbon Offset</span>
-                <span className="font-headline text-2xl font-bold tnum text-on-surface/20">-- <span className="text-xs font-normal text-on-surface-variant/30 uppercase">kg</span></span>
+                <span className="font-headline text-2xl font-bold tnum text-on-surface/20">-- <span className="text-xs font-normal text-on-surface-variant/30 uppercase">lbs</span></span>
               </div>
               <div className="w-px h-10 bg-outline-variant/15"></div>
               <div className="flex flex-col">

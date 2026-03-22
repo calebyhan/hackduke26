@@ -274,7 +274,7 @@ const HeroSection: React.FC = () => {
         <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           <div className="glass-card p-4 text-left">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Grid Intensity</span>
-            <span className="text-xl font-headline font-bold text-primary">342 gCO2/kWh</span>
+            <span className="text-xl font-headline font-bold text-primary">754 lbs/MWh</span>
           </div>
           <div className="glass-card p-4 text-left">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Clean Energy Mix</span>
@@ -286,7 +286,7 @@ const HeroSection: React.FC = () => {
           </div>
           <div className="glass-card p-4 text-left border-l-2 border-l-primary">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Ghost Savings</span>
-            <span className="text-xl font-headline font-bold text-primary">12.4 kg This Month</span>
+            <span className="text-xl font-headline font-bold text-primary">12.4 lbs Today</span>
           </div>
         </div>
       </div>

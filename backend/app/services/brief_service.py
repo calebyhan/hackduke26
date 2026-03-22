@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -49,16 +50,18 @@ def _load_fallback() -> BriefResponse:
 async def generate_brief(req: BriefRequest) -> BriefResponse:
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=_build_user_prompt(req),
-            config=types.GenerateContentConfig(
-                system_instruction=_SYSTEM_PROMPT,
-                response_mime_type="application/json",
-                max_output_tokens=4096,
-                temperature=0.3,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
+        response = await asyncio.to_thread(
+            lambda: client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=_build_user_prompt(req),
+                config=types.GenerateContentConfig(
+                    system_instruction=_SYSTEM_PROMPT,
+                    response_mime_type="application/json",
+                    max_output_tokens=4096,
+                    temperature=0.3,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
         )
         raw = response.text.strip()
         # Strip markdown code fences if present

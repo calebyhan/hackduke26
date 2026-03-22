@@ -1,4 +1,4 @@
-import { useMemo, Fragment } from "react";
+import { useMemo, useState, useEffect, Fragment } from "react";
 import { motion } from "framer-motion";
 import type { ForecastResponse, WeatherResponse } from "../../types/forecast";
 import type { ScheduleEntry } from "../../types/optimize";
@@ -113,12 +113,19 @@ export default function Timeline({
   appliances,
   weather,
 }: TimelineProps) {
+  // Refresh "now" every minute so the NOW marker and day anchor stay accurate.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Single source of truth: UTC ms of PST midnight for today's PDT/PST day.
-  // Anchored to current time so the timeline always shows "today" regardless
-  // of when the forecast was fetched (fixture starts at UTC midnight = March 20 PDT).
+  // Re-anchors when the PST date changes (i.e., past midnight).
   const pstDayStartMs = useMemo(
-    () => getPstDayStartMs(new Date().toISOString()),
-    []
+    () => getPstDayStartMs(now.toISOString()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [now.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" })]
   );
 
   // MOER gradient sampled at each PST hour (0–24) across the day.
@@ -139,8 +146,8 @@ export default function Timeline({
 
   // "Now" marker position relative to the PST day anchor.
   const nowPct = useMemo(
-    () => pstDayFraction(new Date().toISOString(), pstDayStartMs) * 100,
-    [pstDayStartMs]
+    () => pstDayFraction(now.toISOString(), pstDayStartMs) * 100,
+    [now, pstDayStartMs]
   );
 
   // Temperature overlay — only points within the current PST day.

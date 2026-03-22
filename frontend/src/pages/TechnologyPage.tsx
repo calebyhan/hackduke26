@@ -172,7 +172,7 @@ const TechnologyPage: React.FC = () => {
               <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>co2</span>
               <h3 className="font-headline text-xl font-bold">Carbon Intensity</h3>
               <p className="text-on-surface-variant text-sm leading-relaxed">
-                MOER expressed in grams of CO₂ per kWh. Lower is cleaner. Solar noon windows on CAISO_NORTH can drop below 100 gCO₂/kWh.
+                MOER expressed in lbs CO₂ per MWh. Lower is cleaner. Solar noon windows on CAISO_NORTH can drop below 300 lbs/MWh.
               </p>
               <div className="mt-auto pt-4 border-t border-outline-variant/20 flex justify-between items-center">
                 <span className="text-[10px] uppercase text-slate-500 tracking-widest">Weight</span>
@@ -303,7 +303,7 @@ const TechnologyPage: React.FC = () => {
                 </div>
               </div>
               <p className="text-on-surface-variant text-sm leading-relaxed mb-4 italic">
-                "Good morning. Today's grid in CAISO_NORTH is tracking clean through early afternoon — solar generation is peaking at 14:00 with MOER dipping to <span className="text-primary font-semibold not-italic">142 gCO₂/kWh</span>. Evening ramp between 18:00–21:00 is forecast at <span className="text-error font-semibold not-italic">487 gCO₂/kWh</span> as gas peakers pick up demand. I've moved your washer and dishwasher to the morning window. Estimated savings: <span className="text-primary font-semibold not-italic">1.8 kg CO₂</span>."
+                "Good morning. Today's grid in CAISO_NORTH is tracking clean through early afternoon — solar generation is peaking at 14:00 with MOER dipping to <span className="text-primary font-semibold not-italic">314 lbs/MWh</span>. Evening ramp between 18:00-21:00 is forecast at <span className="text-error font-semibold not-italic">1,074 lbs/MWh</span> as gas peakers pick up demand. I've moved your washer and dishwasher to the morning window. Estimated savings: <span className="text-primary font-semibold not-italic">4.0 lbs CO₂</span>."
               </p>
               <div className="flex gap-2 flex-wrap">
                 <span className="px-2 py-1 bg-primary/10 text-[10px] rounded-sm text-primary">Forecast-aware</span>

@@ -41,15 +41,15 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         )}
 
         <div className="flex items-center gap-1">
-          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+          <span title="IoT device sync — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">sensors</span>
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+          </span>
+          <span title="Notifications — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">notifications</span>
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+          </span>
+          <span title="Account — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">account_circle</span>
-          </button>
+          </span>
         </div>
       </div>
     </header>

@@ -30,7 +30,10 @@ export default function AutomationCta() {
           </button>
         </div>
 
-        <button className="w-full text-xs text-accent border border-accent/30 rounded-md py-2 hover:bg-accent/10 transition-colors">
+        <button
+          onClick={() => window.open("https://www.cpuc.ca.gov/industries-and-topics/electrical-energy/demand-response", "_blank")}
+          className="w-full text-xs text-accent border border-accent/30 rounded-md py-2 hover:bg-accent/10 transition-colors"
+        >
           Check Utility Program Eligibility
         </button>
       </div>

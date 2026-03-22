@@ -8,17 +8,40 @@ from app.services.watttime import watttime_client
 router = APIRouter()
 
 
+def _rebase_fixture_points(points: list[dict]) -> list[dict]:
+    """Shift fixture timestamps so the day window starts at today UTC midnight."""
+    if not points:
+        return points
+    first_dt = datetime.fromisoformat(points[0]["start"].replace("Z", "+00:00"))
+    fixture_day = first_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    delta = today_utc - fixture_day
+    rebased = []
+    for p in points:
+        start_dt = datetime.fromisoformat(p["start"].replace("Z", "+00:00")) + delta
+        end_dt = datetime.fromisoformat(p["end"].replace("Z", "+00:00")) + delta
+        rebased.append({
+            **p,
+            "start": start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "end": end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        })
+    return rebased
+
+
 def _normalize_forecast(raw: dict) -> ForecastResponse:
     """Normalize WattTime forecast response to 5-minute intervals."""
     source = raw.get("source", "live")
 
     # If it's already in our fixture format, pass through
     if "points" in raw:
+        points = raw["points"]
+        if source == "fixture":
+            points = _rebase_fixture_points(points)
         return ForecastResponse(
             region=raw.get("region", "CAISO_NORTH"),
-            generated_at=raw.get("generated_at", datetime.now(timezone.utc).isoformat()),
+            generated_at=datetime.now(timezone.utc).isoformat(),
             interval_minutes=5,
-            points=[ForecastPoint(**p) for p in raw["points"]],
+            points=[ForecastPoint(**p) for p in points],
             source=source,
         )
 

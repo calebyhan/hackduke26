@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { ScheduleEntry } from "../../types/optimize";
 import type { OptimizeResponse } from "../../types/optimize";
 import type { BriefResponse } from "../../types/brief";
@@ -8,6 +8,7 @@ import { makeDefaultAppliances } from "../../fixtures/appliances";
 import { makeFixtureOptimizeResult } from "../../fixtures/optimizeResult";
 import { fixtureBrief } from "../../fixtures/brief";
 import { useForecast } from "../../hooks/useForecast";
+import { moerToLabel } from "../../utils/colors";
 
 import { useWeather } from "../../hooks/useWeather";
 import { fetchOptimize } from "../../api/optimize";
@@ -19,6 +20,7 @@ import AiBriefCard from "./AiBriefCard";
 import PolicyImpact from "./PolicyImpact";
 import ImpactProjection from "./ImpactProjection";
 import AutomationCta from "./AutomationCta";
+import SourceBadge from "./SourceBadge";
 
 function buildLiveAppliances(appliances: Appliance[], points: ForecastPoint[]): Appliance[] {
   if (!points.length) return appliances;
@@ -36,11 +38,12 @@ function buildLiveAppliances(appliances: Appliance[], points: ForecastPoint[]): 
   });
 }
 
-function computeBaseline(appliances: Appliance[]): ScheduleEntry[] {
+function computeBaseline(appliances: Appliance[], avgMoer = 800): ScheduleEntry[] {
+  const healthScore = Math.max(0, Math.min(1, 1 - (avgMoer - 300) / 900));
   return appliances.map((a) => {
     const start = a.preferred_start ?? new Date().toISOString();
     const end = new Date(new Date(start).getTime() + a.duration_minutes * 60_000).toISOString();
-    return { appliance_id: a.id, start, end, avg_moer_lbs_per_mwh: 800, avg_health_score: 0.68 };
+    return { appliance_id: a.id, start, end, avg_moer_lbs_per_mwh: avgMoer, avg_health_score: +healthScore.toFixed(2) };
   });
 }
 
@@ -120,26 +123,70 @@ export default function CommandView() {
     [appliances]
   );
 
+  const forecastAvgMoer = useMemo(() => {
+    if (!forecast.points.length) return 800;
+    return forecast.points.reduce((s, p) => s + p.moer_lbs_per_mwh, 0) / forecast.points.length;
+  }, [forecast.points]);
+
   const handleAddAppliance = useCallback((appliance: Appliance) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const start = `${today}T18:00:00Z`;
-    const end = new Date(new Date(start).getTime() + appliance.duration_minutes * 60_000).toISOString();
+    // Round current time up to the next hour as a sensible default start.
+    const roundedNow = new Date();
+    roundedNow.setMinutes(0, 0, 0);
+    roundedNow.setHours(roundedNow.getHours() + 1);
+    const start = roundedNow.toISOString();
+    const end = new Date(roundedNow.getTime() + appliance.duration_minutes * 60_000).toISOString();
+    const healthScore = +(Math.max(0, Math.min(1, 1 - (forecastAvgMoer - 300) / 900))).toFixed(2);
     setAppliances((prev) => [...prev, appliance]);
     setSchedule((prev) => [
       ...prev,
-      { appliance_id: appliance.id, start, end, avg_moer_lbs_per_mwh: 800, avg_health_score: 0.68 },
+      { appliance_id: appliance.id, start, end, avg_moer_lbs_per_mwh: forecastAvgMoer, avg_health_score: healthScore },
     ]);
-  }, []);
+  }, [forecastAvgMoer]);
 
   const handleDeleteAppliance = useCallback((id: string) => {
     setAppliances((prev) => prev.filter((a) => a.id !== id));
     setSchedule((prev) => prev.filter((s) => s.appliance_id !== id));
   }, []);
 
-  const baselineCo2 = optimizeResult?.baseline.total_co2_lbs ?? 41.8;
+  const estimatedBaselineCo2 = useMemo(() => {
+    // CO2 (lbs) = power_kw * duration_hours * moer_lbs_per_mwh / 1000 (kW→MW)
+    return appliances.reduce(
+      (sum, a) => sum + a.power_kw * (a.duration_minutes / 60) * forecastAvgMoer / 1000,
+      0
+    );
+  }, [appliances, forecastAvgMoer]);
+
+  const baselineCo2 = optimizeResult?.baseline.total_co2_lbs ?? estimatedBaselineCo2;
   const currentCo2 = isOptimized
     ? (optimizeResult?.optimized.total_co2_lbs ?? baselineCo2)
     : baselineCo2;
+
+  const peakPoint = useMemo(() =>
+    forecast.points.length
+      ? forecast.points.reduce((best, p) => p.moer_lbs_per_mwh > best.moer_lbs_per_mwh ? p : best)
+      : null,
+    [forecast.points]
+  );
+
+  const peakTimeStr = useMemo(() => {
+    if (!peakPoint) return "--:--";
+    return new Date(peakPoint.start).toLocaleTimeString("en-US", {
+      hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles", hour12: false,
+    }) + " PST";
+  }, [peakPoint]);
+
+  const gridHealthLabel = useMemo(() => {
+    if (!forecast.points.length) return "—";
+    const avg = forecast.points.reduce((s, p) => s + p.moer_lbs_per_mwh, 0) / forecast.points.length;
+    return { clean: "Clean", moderate: "Moderate", dirty: "Stressed" }[moerToLabel(avg)];
+  }, [forecast.points]);
+
+  const gridHealthClass = useMemo(() => {
+    if (!forecast.points.length) return "text-on-surface-variant";
+    const avg = forecast.points.reduce((s, p) => s + p.moer_lbs_per_mwh, 0) / forecast.points.length;
+    const label = moerToLabel(avg);
+    return label === "clean" ? "text-primary" : label === "moderate" ? "text-amber-400" : "text-red-400";
+  }, [forecast.points]);
 
   return (
     <main className="w-full">
@@ -159,20 +206,23 @@ export default function CommandView() {
         <div className="relative h-full flex flex-col justify-between px-6 py-4">
           <div className="flex justify-between items-start">
             <div>
-              <span className="font-headline text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Grid Intensity Forecast</span>
+              <div className="flex items-center gap-2">
+                <span className="font-headline text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Grid Intensity Forecast</span>
+                <SourceBadge source={forecast.source} />
+              </div>
               <h1 className="font-headline text-4xl font-bold tracking-tight mt-1 tnum">{Math.round(currentCo2)}<span className="text-lg font-normal text-on-surface-variant ml-2 uppercase">lbs CO₂</span></h1>
             </div>
             <div className="flex gap-4 items-start">
               <div className="text-right">
                 <span className="block font-headline text-[10px] uppercase tracking-widest text-on-surface-variant">Peak Demand</span>
-                <span className="block font-mono text-sm text-tertiary">19:42 UTC</span>
+                <span className="block font-mono text-sm text-tertiary">{peakTimeStr}</span>
               </div>
               <div className="text-right border-l border-outline-variant/30 pl-4">
                 <span className="block font-headline text-[10px] uppercase tracking-widest text-on-surface-variant">Grid Health</span>
-                <span className="block font-headline text-sm text-primary uppercase">Stable</span>
+                <span className={`block font-headline text-sm uppercase ${gridHealthClass}`}>{gridHealthLabel}</span>
               </div>
               <div className="text-right border-l border-outline-variant/30 pl-4">
-                <span className="block font-headline text-[10px] uppercase tracking-widest text-on-surface-variant">Weekly CO₂</span>
+                <span className="block font-headline text-[10px] uppercase tracking-widest text-on-surface-variant">Daily CO₂</span>
                 <span className="block font-mono text-sm text-on-surface tnum">{currentCo2.toFixed(1)} <span className="text-on-surface-variant text-xs">lbs</span></span>
                 {isOptimized && (
                   <span className="block font-mono text-xs text-primary">

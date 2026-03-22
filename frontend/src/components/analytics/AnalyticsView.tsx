@@ -26,7 +26,7 @@ export default function AnalyticsView() {
 
   return (
     <motion.div 
-      className="space-y-4 mt-6 mx-4"
+      className="space-y-4 mt-6 mx-4 pb-12"
       variants={containerVariants}
       initial="hidden"
       animate="show"

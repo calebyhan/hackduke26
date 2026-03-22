@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const VisualHighlightSection: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleJoin = () => {
+    if (email.trim()) setSubmitted(true);
+  };
+
   return (
     <section className="py-20 overflow-hidden bg-background">
       <div className="container mx-auto px-8 relative">
@@ -14,13 +21,30 @@ const VisualHighlightSection: React.FC = () => {
               <p className="text-on-surface-variant text-xl mb-10 leading-relaxed">
                 Be part of the first 1,000 users to access the GridGhost Alpha. Help us build the future of autonomous, planet-first energy.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <input className="bg-surface-container-lowest border border-outline-variant/30 px-6 py-4 rounded-sm focus:border-primary focus:ring-0 text-on-surface w-full" placeholder="Enter your email" type="email"/>
-                <button className="bg-primary text-on-primary font-bold px-8 py-4 rounded-sm whitespace-nowrap hover:bg-primary-container transition-colors">
-                  Join Alpha
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-4 uppercase tracking-widest">Limited capacity remaining for Q4 2024</p>
+              {submitted ? (
+                <div className="flex items-center gap-3 py-4 text-primary">
+                  <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                  <span className="font-bold">You're on the list. We'll be in touch.</span>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <input
+                    className="bg-surface-container-lowest border border-outline-variant/30 px-6 py-4 rounded-sm focus:border-primary focus:ring-0 text-on-surface w-full"
+                    placeholder="Enter your email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                  />
+                  <button
+                    onClick={handleJoin}
+                    className="bg-primary text-on-primary font-bold px-8 py-4 rounded-sm whitespace-nowrap hover:bg-primary-container transition-colors"
+                  >
+                    Join Alpha
+                  </button>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-500 mt-4 uppercase tracking-widest">Limited spots available — Spring 2026</p>
             </div>
             <div className="hidden md:block">
               <div className="relative">

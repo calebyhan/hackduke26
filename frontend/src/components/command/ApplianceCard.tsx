@@ -185,7 +185,7 @@ export default function ApplianceCard({
             </div>
             {scheduleEntry && (
               <div>
-                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Window Start (UTC)</label>
+                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Window Start (PST)</label>
                 <input
                   type="time"
                   value={editStart}
@@ -198,7 +198,7 @@ export default function ApplianceCard({
           {editShiftable && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Not before (UTC)</label>
+                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Not before (PST)</label>
                 <input
                   type="time"
                   value={editEarliestStart}
@@ -207,7 +207,7 @@ export default function ApplianceCard({
                 />
               </div>
               <div>
-                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Must finish by (UTC)</label>
+                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Must finish by (PST)</label>
                 <input
                   type="time"
                   value={editDeadline}
