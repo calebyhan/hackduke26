@@ -54,13 +54,13 @@ export default function DualSignalChart({ forecast }: DualSignalChartProps) {
   }, [forecast.points]);
 
   return (
-    <div className="bg-bg-card rounded-xl p-6 border border-border">
+    <div className="bg-bg-card rounded-xl p-6 border border-border select-none [&_.recharts-wrapper]:outline-none [&_*]:outline-none">
       <h4 className="text-sm font-medium mb-3 flex items-center">
         CO₂ vs Health Signal (24h)
         <InfoTooltip content="This chart compares the Marginal Operating Emissions Rate (MOER), representing CO₂ intensity, with a Health Score that indicates the optimal timeframe for energy usage. A higher health score means cleaner power!" />
       </h4>
-      <ResponsiveContainer width="100%" height={220}>
-        <ComposedChart data={chartData}>
+      <ResponsiveContainer width="100%" height={220} className="focus:outline-none">
+        <ComposedChart data={chartData} style={{ outline: "none" }}>
           <CartesianGrid stroke="#2a2b35" strokeDasharray="3 3" />
           <XAxis
             dataKey="time"

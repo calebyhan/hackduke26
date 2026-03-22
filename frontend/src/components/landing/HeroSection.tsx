@@ -241,7 +241,7 @@ const HeroSection: React.FC = () => {
 
       <div className="relative z-20 container mx-auto px-6 text-center">
         <div className="inline-flex items-center space-x-2 bg-surface-container-low px-4 py-1.5 rounded-sm border border-outline-variant/30 mb-8">
-          <span className="w-2 h-2 rounded-full bg-primary glow-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-primary animate-evident-blink mx-1"></span>
           <span className="text-[10px] uppercase tracking-[0.1em] font-medium text-primary">System Online: Grid Pulse Active</span>
         </div>
         <h1 className="font-headline text-5xl md:text-8xl font-bold tracking-tighter mb-6 text-white max-w-5xl mx-auto leading-none">
@@ -250,14 +250,25 @@ const HeroSection: React.FC = () => {
         <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed font-light">
           Real-time carbon intelligence for the modern home. Shift your energy use to save the planet without changing your life.
         </p>
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 relative">
+          {/* Ambient pulse effect behind the button */}
+          <div className="absolute inset-0 bg-primary blur-[60px] opacity-20 animate-pulse rounded-full w-3/4 mx-auto pointer-events-none"></div>
+          
           <Link
             to="/dashboard"
-            className="group relative w-full md:w-auto px-12 py-5 bg-primary text-white font-bold rounded-sm text-lg overflow-hidden transition-all duration-300 hover:bg-primary-container hover:shadow-[0_0_40px_-4px_rgba(78,222,163,0.7)] hover:scale-105 active:scale-100 text-center inline-flex items-center justify-center gap-3 border-2 border-primary"
+            className="group relative w-full md:w-auto px-12 py-5 bg-primary text-bg-dark font-extrabold rounded-full text-lg overflow-hidden transition-all duration-500 hover:shadow-[0_0_60px_-10px_rgba(78,222,163,0.8)] hover:scale-105 active:scale-95 text-center inline-flex items-center justify-center gap-3 border border-white/10"
           >
-            <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-            <span className="relative">See the Grid Live</span>
-            <span className="material-symbols-outlined relative text-xl transition-transform duration-300 group-hover:translate-x-1" style={{fontVariationSettings: "'FILL' 1"}}>arrow_forward</span>
+            {/* Gradient Background that shifts on hover */}
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-[#10b981] via-[#34d399] to-[#06b6d4] opacity-90 group-hover:opacity-100 transition-opacity duration-500"></span>
+            
+            {/* Flashing Sweep Effect */}
+            <span className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-[150%] group-hover:translate-x-[50%] transition-transform duration-1000 ease-in-out skew-x-[-20deg]"></span>
+            
+            {/* Inner Border Glow */}
+            <span className="absolute inset-0 rounded-full border-2 border-white/20 group-hover:border-white/50 transition-colors duration-300 pointer-events-none"></span>
+
+            <span className="relative z-10 tracking-wide drop-shadow-sm">See the Grid Live</span>
+            <span className="material-symbols-outlined relative z-10 text-xl transition-transform duration-500 group-hover:translate-x-2 drop-shadow-sm" style={{fontVariationSettings: "'FILL' 1"}}>arrow_forward</span>
           </Link>
         </div>
         <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">

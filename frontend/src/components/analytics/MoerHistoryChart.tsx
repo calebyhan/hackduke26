@@ -34,16 +34,20 @@ export default function MoerHistoryChart() {
 
   const chartData = useMemo(() => {
     if (!history?.points.length) return [];
-    // Group into 3-hour buckets for readability (56 points over 7 days)
     const buckets: { label: string; moer: number }[] = [];
+    let lastDay = history.points.length ? new Date(history.points[0].time).getDay() : -1;
     for (let i = 0; i < history.points.length; i += 3) {
       const slice = history.points.slice(i, i + 3);
       const avg = slice.reduce((s, p) => s + p.moer_lbs_per_mwh, 0) / slice.length;
       const dt = new Date(slice[0].time);
-      const dayName = DAY_LABELS[dt.getUTCDay()];
-      const hour = dt.getUTCHours();
-      // Only label midnight ticks
-      const label = hour === 0 ? dayName : "";
+      
+      const currentDay = dt.getDay();
+      let label = "";
+      if (currentDay !== lastDay) {
+        label = DAY_LABELS[currentDay];
+        lastDay = currentDay;
+      }
+      
       buckets.push({ label, moer: Math.round(avg) });
     }
     return buckets;
@@ -63,7 +67,7 @@ export default function MoerHistoryChart() {
   }
 
   return (
-    <div className="bg-bg-card rounded-xl p-6 border border-border">
+    <div className="bg-bg-card rounded-xl p-6 border border-border select-none [&_.recharts-wrapper]:outline-none [&_*]:outline-none">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium flex items-center">
           MOER Trend (7-day)
@@ -71,21 +75,28 @@ export default function MoerHistoryChart() {
         </h4>
         <SourceBadge source={history!.source} />
       </div>
-      <ResponsiveContainer width="100%" height={180}>
-        <AreaChart data={chartData}>
+      <ResponsiveContainer width="100%" height={180} className="focus:outline-none">
+        <AreaChart data={chartData} style={{ outline: "none" }}>
           <defs>
             <linearGradient id="moerGradient7d" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
               <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#2a2b35" strokeDasharray="3 3" />
+          <CartesianGrid vertical={false} stroke="#2a2b35" strokeDasharray="3 3" />
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: "#9ca3af" }}
             interval={0}
+            tickLine={false}
+            axisLine={{ stroke: "#2a2b35" }}
           />
-          <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} domain={["auto", "auto"]} />
+          <YAxis 
+            tick={{ fontSize: 10, fill: "#9ca3af" }} 
+            domain={["auto", "auto"]} 
+            tickLine={false}
+            axisLine={false}
+          />
           <Tooltip
             contentStyle={{
               background: "#1a1b23",

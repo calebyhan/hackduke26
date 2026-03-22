@@ -37,7 +37,7 @@ const TechnologyPage: React.FC = () => {
 
         <div className="relative z-20 text-center px-6 max-w-4xl mx-auto">
           <div className="inline-flex items-center space-x-2 bg-surface-container-low px-4 py-1.5 rounded-sm border border-outline-variant/30 mb-8">
-            <span className="w-2 h-2 rounded-full bg-primary glow-pulse" />
+            <span className="w-2 h-2 rounded-full bg-primary animate-evident-blink mx-1" />
             <span className="text-[10px] uppercase tracking-[0.1em] font-medium text-primary">Technical Architecture</span>
           </div>
           <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tighter mb-6 text-white leading-none">
