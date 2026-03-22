@@ -112,16 +112,15 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
 
     # --- Phase 1: lock fixed appliances ---
     scheduled: dict[str, tuple[int, int]] = {}
-    reserved: list[bool] = [False] * len(points)
 
     for a in appliances:
         if not a.shiftable:
             b_start, b_end = baseline_schedule[a.id]
             scheduled[a.id] = (b_start, b_end)
-            for i in range(b_start, min(b_end, len(points))):
-                reserved[i] = True
 
     # --- Phase 2: greedy optimize shiftables in dependency order ---
+    # Shiftable appliances are NOT mutually exclusive — multiple can run simultaneously.
+    # Only hard constraints are dependencies (dryer after washer, etc.) and deadlines.
     shiftables = _topo_sort_shiftable([a for a in appliances if a.shiftable])
 
     for a in shiftables:
@@ -138,37 +137,46 @@ def optimize(request: OptimizeRequest) -> OptimizeResponse:
             if deadline_idx < n:
                 deadline_idx = len(points)  # deadline passed; use full window
 
-        # Dependency constraint: must start after all shiftable deps finish
+        # Earliest-start window constraint
         min_start = 0
+        if a.earliest_start:
+            earliest_dt = _parse_iso(a.earliest_start)
+            found = False
+            for i, p in enumerate(points):
+                if _parse_iso(p.start) >= earliest_dt:
+                    min_start = i
+                    found = True
+                    break
+            if not found:
+                # earliest_start is past the end of the forecast window —
+                # treat as no constraint so the optimizer can still find the
+                # lowest-MOER slot rather than falling back to an unoptimized baseline.
+                min_start = 0
+
+        # Dependency constraint: must start after all deps finish
         for dep_id in a.dependencies:
             if dep_id in scheduled:
                 _, dep_end = scheduled[dep_id]
                 min_start = max(min_start, dep_end)
 
-        # Enumerate feasible windows
+        # Enumerate all feasible windows and pick lowest MOER
         feasible: list[tuple[float, float, int, int]] = []
         for start_idx in range(min_start, len(points) - n + 1):
             end_idx = start_idx + n
             if end_idx > deadline_idx:
                 break
-            if any(reserved[i] for i in range(start_idx, end_idx)):
-                continue
             avg_moer, avg_health = _score_window(points, start_idx, n)
             feasible.append((avg_moer, avg_health, end_idx, start_idx))
 
         if not feasible:
             b_start, b_end = baseline_schedule[a.id]
             scheduled[a.id] = (b_start, b_end)
-            for i in range(b_start, min(b_end, len(points))):
-                reserved[i] = True
             continue
 
         feasible.sort()
         best_start = feasible[0][3]
         best_end = best_start + n
         scheduled[a.id] = (best_start, best_end)
-        for i in range(best_start, best_end):
-            reserved[i] = True
 
     # --- Build response ---
     schedule_entries: list[ScheduleEntry] = []

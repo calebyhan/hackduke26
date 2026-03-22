@@ -1,22 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ForecastResponse } from "../types/forecast";
 import { apiClient } from "../api/client";
-import { fixtureForecast } from "../fixtures/forecast";
+import { makeFixtureForecast } from "../fixtures/forecast";
 
 async function loadForecast(): Promise<{ data: ForecastResponse; error: boolean }> {
   try {
     const { data } = await apiClient.get<ForecastResponse>("/api/forecast");
     // If the API returns all-zero MOER values (free-tier WattTime account), use fixture
     const hasRealData = data.points?.some((p) => p.moer_lbs_per_mwh > 0);
-    if (!hasRealData) return { data: fixtureForecast, error: true };
+    if (!hasRealData) return { data: makeFixtureForecast(), error: true };
     return { data, error: false };
   } catch {
-    return { data: fixtureForecast, error: true };
+    return { data: makeFixtureForecast(), error: true };
   }
 }
 
 export function useForecast(pollIntervalMs = 5 * 60 * 1000) {
-  const [forecast, setForecast] = useState<ForecastResponse>(fixtureForecast);
+  const [forecast, setForecast] = useState<ForecastResponse>(() => makeFixtureForecast());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);

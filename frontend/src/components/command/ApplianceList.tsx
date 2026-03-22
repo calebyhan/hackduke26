@@ -63,7 +63,7 @@ export default function ApplianceList({
     <div className="flex flex-col gap-2">
       {/* Scrollable card list with bottom fade */}
       <div className="relative">
-        <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1" onScroll={handleScroll}>
+        <div className="space-y-2 max-h-[460px] overflow-y-auto pr-2" onScroll={handleScroll}>
           {appliances.map((a) => (
             <ApplianceCard
               key={a.id}

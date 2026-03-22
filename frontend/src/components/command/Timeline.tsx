@@ -1,10 +1,53 @@
-import { useMemo } from "react";
+import { useMemo, Fragment } from "react";
 import { motion } from "framer-motion";
 import type { ForecastResponse, WeatherResponse } from "../../types/forecast";
 import type { ScheduleEntry } from "../../types/optimize";
 import type { Appliance } from "../../types/appliance";
 import { moerToColor } from "../../utils/colors";
-import { localTimeOfDayFraction, timeToFraction, durationToFraction } from "../../utils/time";
+import { getPstDayStartMs, pstDayFraction, durationToFraction } from "../../utils/time";
+import type { ForecastPoint } from "../../types/forecast";
+
+/**
+ * PST minute-of-day (0–1439) for a given ISO timestamp.
+ * Used for time-of-day matching against forecast points, ignoring date.
+ */
+function pstMinOfDay(iso: string): number {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return h * 60 + m;
+}
+
+/**
+ * Average MOER for forecast points overlapping a window [startIso, startIso + durationMinutes).
+ * Matches by PST time-of-day so fixture dates don't need to match forecast dates.
+ */
+function getWindowMoer(startIso: string, durationMinutes: number, points: ForecastPoint[]): number {
+  if (!points.length) return 600;
+  const startMin = pstMinOfDay(startIso);
+  const endMin = startMin + durationMinutes;
+  const overlapping = points.filter((p) => {
+    const pMin = pstMinOfDay(p.start);
+    return pMin >= startMin && pMin < endMin;
+  });
+  if (overlapping.length) {
+    return overlapping.reduce((sum, p) => sum + p.moer_lbs_per_mwh, 0) / overlapping.length;
+  }
+  // Fallback: closest point by PST time-of-day
+  let best = points[0];
+  let bestDiff = Infinity;
+  for (const p of points) {
+    const diff = Math.abs(pstMinOfDay(p.start) - startMin);
+    if (diff < bestDiff) { best = p; bestDiff = diff; }
+  }
+  return best.moer_lbs_per_mwh;
+}
 
 const CHIP_IDENTITY_COLORS: Record<string, string> = {
   ev: "#3b82f6",
@@ -27,7 +70,6 @@ interface TimelineProps {
   appliances: Appliance[];
   weather?: WeatherResponse | null;
 }
-
 
 const CHIP_H = 26;
 const CHIP_GAP = 3;
@@ -71,38 +113,43 @@ export default function Timeline({
   appliances,
   weather,
 }: TimelineProps) {
-  const dayStart = forecast.points[0]?.start ?? "";
+  // Single source of truth: UTC ms of PST midnight for today's PDT/PST day.
+  // Anchored to current time so the timeline always shows "today" regardless
+  // of when the forecast was fetched (fixture starts at UTC midnight = March 20 PDT).
+  const pstDayStartMs = useMemo(
+    () => getPstDayStartMs(new Date().toISOString()),
+    []
+  );
 
+  // MOER gradient sampled at each PST hour (0–24) across the day.
   const gradient = useMemo(() => {
-    const stops = forecast.points.map((p, i) => {
-      const pct = (i / forecast.points.length) * 100;
-      return `${moerToColor(p.moer_lbs_per_mwh)} ${pct}%`;
+    const stops = Array.from({ length: 25 }, (_, h) => {
+      const sample = new Date(pstDayStartMs + h * 3_600_000);
+      const moer = getWindowMoer(sample.toISOString(), 60, forecast.points);
+      return `${moerToColor(moer)} ${((h / 24) * 100).toFixed(2)}%`;
     });
     return `linear-gradient(to right, ${stops.join(", ")})`;
-  }, [forecast.points]);
+  }, [pstDayStartMs, forecast.points]);
 
-  // Local-time ticks every 3 hours
+  // Fixed PST hour ticks: 12 AM, 3 AM, … 9 PM
   const ticks = useMemo(() => {
-    const labels = ["12 AM","3 AM","6 AM","9 AM","12 PM","3 PM","6 PM","9 PM"];
+    const labels = ["12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM"];
     return labels.map((label, i) => ({ label, pct: (i * 3 / 24) * 100 }));
   }, []);
 
-  // Current local time as % of day
-  const nowPct = useMemo(() => {
-    const now = new Date();
-    return ((now.getHours() * 60 + now.getMinutes()) / (24 * 60)) * 100;
-  }, []);
+  // "Now" marker position relative to the PST day anchor.
+  const nowPct = useMemo(
+    () => pstDayFraction(new Date().toISOString(), pstDayStartMs) * 100,
+    [pstDayStartMs]
+  );
 
+  // Temperature overlay — only points within the current PST day.
   const tempPath = useMemo(() => {
-    if (!weather?.hourly?.length || !dayStart) return null;
+    if (!weather?.hourly?.length) return null;
     const BAR_H = 48;
     const pts = weather.hourly
-      .map((h) => {
-        const x = timeToFraction(h.time, dayStart);
-        if (x < 0 || x > 1) return null;
-        return { x, temp: h.temperature_c };
-      })
-      .filter(Boolean) as { x: number; temp: number }[];
+      .map((h) => ({ x: pstDayFraction(h.time, pstDayStartMs), temp: h.temperature_c }))
+      .filter((p) => p.x >= 0 && p.x <= 1);
 
     if (pts.length < 2) return null;
 
@@ -114,7 +161,7 @@ export default function Timeline({
     const points = pts.map((p) => `${(p.x * 100).toFixed(2)},${toY(p.temp).toFixed(1)}`).join(" ");
 
     return { points, minF: cToF(minT), maxF: cToF(maxT) };
-  }, [weather, dayStart]);
+  }, [weather, pstDayStartMs]);
 
   const applianceMap = useMemo(
     () => Object.fromEntries(appliances.map((a) => [a.id, a])),
@@ -132,7 +179,7 @@ export default function Timeline({
   return (
     <div className="bg-bg-card rounded-xl p-4 w-full">
       <div className="relative">
-        {/* Current time vertical marker — spans bar + chips */}
+        {/* Current time vertical marker */}
         <div
           className="absolute z-20 pointer-events-none"
           style={{
@@ -144,7 +191,6 @@ export default function Timeline({
             borderRadius: 1,
           }}
         />
-        {/* "Now" label above the bar */}
         <div
           className="absolute z-20 pointer-events-none -translate-x-1/2"
           style={{ left: `${nowPct}%`, top: -18 }}
@@ -185,38 +231,93 @@ export default function Timeline({
         {/* Appliance chips — multi-row to avoid overlap */}
         <div className="relative mt-2" style={{ height: chipsHeight }}>
           {rowedSchedule.map(({ entry, appliance, row }) => {
-            const left = localTimeOfDayFraction(entry.start) * 100;
+            const frac = pstDayFraction(entry.start, pstDayStartMs);
+            const left = frac * 100;
             const width = durationToFraction(appliance.duration_minutes) * 100;
-            const renderedWidth = Math.max(width, 2);
             const top = row * (CHIP_H + CHIP_GAP);
-            const moerColor = moerToColor(entry.avg_moer_lbs_per_mwh);
             const accentColor = getIdentityColor(entry.appliance_id);
 
-            return (
-              <motion.div
-                key={entry.appliance_id}
-                layoutId={entry.appliance_id}
-                className="absolute flex items-center rounded-md text-xs font-medium text-white cursor-default overflow-hidden"
-                style={{
-                  left: `${left}%`,
-                  width: `${renderedWidth}%`,
-                  top,
-                  height: CHIP_H,
-                  backgroundColor: moerColor,
-                  opacity: appliance.shiftable ? 1 : 0.75,
-                  borderLeft: `3px solid ${accentColor}`,
-                }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-              >
-                <span className="truncate pl-1.5 pr-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+            // Chip is on the next PST day (fraction ≥ 1) — normalize to position within that day
+            const isNextDay = frac >= 1;
+            const normalizedLeft = isNextDay ? (frac % 1) * 100 : left;
+
+            // Wrap-around only applies to today's chips that cross PST midnight (not next-day chips)
+            const wrapsAtMidnight = !isNextDay && normalizedLeft + width > 100;
+            const primaryWidth = Math.max(wrapsAtMidnight ? 100 - normalizedLeft : Math.min(width, 100 - normalizedLeft), 2);
+            const wrapWidth = wrapsAtMidnight ? Math.max(normalizedLeft + width - 100, 2) : 0;
+
+            // Chip gradient mirrors the bar at the chip's position
+            const chipGradientStyle = (l: number, w: number) => ({
+              backgroundImage: gradient,
+              backgroundSize: `${(10000 / Math.max(w, 0.01)).toFixed(2)}% 100%`,
+              backgroundPosition: `${(l * 100 / Math.max(100 - w, 0.01)).toFixed(2)}% 0`,
+            });
+
+            const baseStyle = {
+              top,
+              height: CHIP_H,
+              opacity: appliance.shiftable ? 1 : 0.85,
+            };
+
+            const ChipLabel = ({ nextDay }: { nextDay: boolean }) => (
+              <>
+                <span className="truncate pl-1.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                   {appliance.name}
                 </span>
-              </motion.div>
+                {nextDay && (
+                  <span className="shrink-0 mx-1 text-[8px] bg-white/25 px-1 py-0.5 rounded font-mono leading-none">
+                    +1
+                  </span>
+                )}
+              </>
+            );
+
+            // Skip chips entirely before the PST day (frac < 0)
+            if (frac < 0) return null;
+
+            return (
+              <Fragment key={entry.appliance_id}>
+                {/* Primary segment */}
+                <motion.div
+                  layoutId={entry.appliance_id}
+                  className="absolute flex items-center rounded-md text-xs font-medium text-white cursor-default overflow-hidden"
+                  style={{
+                    left: `${Math.min(normalizedLeft, 99)}%`,
+                    width: `${primaryWidth}%`,
+                    borderLeft: `3px solid ${accentColor}`,
+                    outline: `1px solid rgba(255,255,255,0.15)`,
+                    ...chipGradientStyle(Math.min(normalizedLeft, 99), primaryWidth),
+                    ...baseStyle,
+                  }}
+                  transition={{ duration: 1.5, ease: "easeInOut" }}
+                >
+                  <ChipLabel nextDay={isNextDay} />
+                </motion.div>
+
+                {/* Wrap-around segment (past PST midnight) */}
+                {wrapsAtMidnight && (
+                  <motion.div
+                    layoutId={`${entry.appliance_id}-wrap`}
+                    className="absolute flex items-center rounded-md text-xs font-medium text-white cursor-default overflow-hidden"
+                    style={{
+                      left: "0%",
+                      width: `${wrapWidth}%`,
+                      borderLeft: `3px dashed ${accentColor}`,
+                      outline: `1px solid rgba(255,255,255,0.15)`,
+                      ...chipGradientStyle(0, wrapWidth),
+                      ...baseStyle,
+                    }}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                  >
+                    <ChipLabel nextDay={true} />
+                  </motion.div>
+                )}
+              </Fragment>
             );
           })}
         </div>
 
-        {/* Time ticks */}
+        {/* Time ticks — PST hours */}
         <div className="relative h-5 mt-1">
           {ticks.map(({ label, pct }, i) => (
             <span
@@ -229,7 +330,7 @@ export default function Timeline({
               {label}
             </span>
           ))}
-          <span className="absolute right-0 text-[10px] text-text-muted/50 italic">Local time</span>
+          <span className="absolute right-0 text-[10px] font-mono font-semibold text-text-muted bg-white/10 px-1 rounded">PT</span>
         </div>
       </div>
 

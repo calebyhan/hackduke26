@@ -4,11 +4,8 @@ import type { OptimizeResponse } from "../../types/optimize";
 import type { BriefResponse } from "../../types/brief";
 import type { ForecastPoint } from "../../types/forecast";
 import type { Appliance } from "../../types/appliance";
-import {
-  defaultAppliances,
-  baselineSchedule,
-} from "../../fixtures/appliances";
-import { fixtureOptimizeResult } from "../../fixtures/optimizeResult";
+import { makeDefaultAppliances } from "../../fixtures/appliances";
+import { makeFixtureOptimizeResult } from "../../fixtures/optimizeResult";
 import { fixtureBrief } from "../../fixtures/brief";
 import { useForecast } from "../../hooks/useForecast";
 
@@ -40,11 +37,8 @@ function buildLiveAppliances(appliances: Appliance[], points: ForecastPoint[]): 
 }
 
 function computeBaseline(appliances: Appliance[]): ScheduleEntry[] {
-  const today = new Date().toISOString().slice(0, 10);
   return appliances.map((a) => {
-    const existing = baselineSchedule.find((s) => s.appliance_id === a.id);
-    if (existing) return existing;
-    const start = a.preferred_start ?? `${today}T18:00:00Z`;
+    const start = a.preferred_start ?? new Date().toISOString();
     const end = new Date(new Date(start).getTime() + a.duration_minutes * 60_000).toISOString();
     return { appliance_id: a.id, start, end, avg_moer_lbs_per_mwh: 800, avg_health_score: 0.68 };
   });
@@ -53,8 +47,8 @@ function computeBaseline(appliances: Appliance[]): ScheduleEntry[] {
 export default function CommandView() {
   const { forecast } = useForecast();
   const { weather } = useWeather();
-  const [appliances, setAppliances] = useState<Appliance[]>(defaultAppliances);
-  const [schedule, setSchedule] = useState<ScheduleEntry[]>(baselineSchedule);
+  const [appliances, setAppliances] = useState<Appliance[]>(() => makeDefaultAppliances());
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>(() => computeBaseline(makeDefaultAppliances()));
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResponse | null>(null);
   const [brief, setBrief] = useState<BriefResponse | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -71,8 +65,7 @@ export default function CommandView() {
         liveAppliances
       );
     } catch {
-      // Fallback to fixture
-      result = fixtureOptimizeResult;
+      result = makeFixtureOptimizeResult();
     }
 
     setOptimizeResult(result);
@@ -143,7 +136,7 @@ export default function CommandView() {
     setSchedule((prev) => prev.filter((s) => s.appliance_id !== id));
   }, []);
 
-  const baselineCo2 = optimizeResult?.baseline.total_co2_lbs ?? fixtureOptimizeResult.baseline.total_co2_lbs;
+  const baselineCo2 = optimizeResult?.baseline.total_co2_lbs ?? 41.8;
   const currentCo2 = isOptimized
     ? (optimizeResult?.optimized.total_co2_lbs ?? baselineCo2)
     : baselineCo2;

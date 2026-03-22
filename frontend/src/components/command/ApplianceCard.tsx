@@ -48,12 +48,20 @@ export default function ApplianceCard({
     scheduleEntry ? scheduleEntry.start.slice(11, 16) : "18:00"
   );
   const [editShiftable, setEditShiftable] = useState(appliance.shiftable);
+  const [editEarliestStart, setEditEarliestStart] = useState(
+    appliance.earliest_start ? appliance.earliest_start.slice(11, 16) : ""
+  );
+  const [editDeadline, setEditDeadline] = useState(
+    appliance.deadline ? appliance.deadline.slice(11, 16) : ""
+  );
 
   const handleEdit = () => {
     setEditName(appliance.name);
     setEditDuration(appliance.duration_minutes);
     setEditStart(scheduleEntry ? scheduleEntry.start.slice(11, 16) : "18:00");
     setEditShiftable(appliance.shiftable);
+    setEditEarliestStart(appliance.earliest_start ? appliance.earliest_start.slice(11, 16) : "");
+    setEditDeadline(appliance.deadline ? appliance.deadline.slice(11, 16) : "");
     setIsEditing(true);
   };
 
@@ -65,11 +73,33 @@ export default function ApplianceCard({
     const shiftableChanged = editShiftable !== appliance.shiftable;
     const startChanged = scheduleEntry && editStart !== scheduleEntry.start.slice(11, 16);
 
-    if (nameChanged || durationChanged || shiftableChanged) {
+    // Rebuild ISO strings preserving the date portion from the existing value (or today)
+    const datePrefix = (appliance.earliest_start ?? appliance.deadline ?? new Date().toISOString()).slice(0, 10);
+    const toISO = (hhmm: string, dayOffset = 0) => {
+      if (!hhmm) return undefined;
+      const d = new Date(`${datePrefix}T${hhmm}:00Z`);
+      d.setUTCDate(d.getUTCDate() + dayOffset);
+      return d.toISOString().replace(".000Z", "Z");
+    };
+
+    const newEarliestStart = toISO(editEarliestStart);
+    const rawDeadline = toISO(editDeadline);
+    // If deadline is earlier than earliest_start (overnight window), push it to next day
+    const newDeadline = rawDeadline && newEarliestStart && rawDeadline <= newEarliestStart
+      ? toISO(editDeadline, 1)
+      : rawDeadline;
+
+    const windowChanged =
+      newEarliestStart !== appliance.earliest_start ||
+      newDeadline !== appliance.deadline;
+
+    if (nameChanged || durationChanged || shiftableChanged || windowChanged) {
       onUpdate({
         name: editName.trim() || appliance.name,
         duration_minutes: Math.max(1, editDuration),
         shiftable: editShiftable,
+        earliest_start: newEarliestStart,
+        deadline: newDeadline,
       });
     }
     if (startChanged) {
@@ -165,6 +195,28 @@ export default function ApplianceCard({
               </div>
             )}
           </div>
+          {editShiftable && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Not before (UTC)</label>
+                <input
+                  type="time"
+                  value={editEarliestStart}
+                  onChange={(e) => setEditEarliestStart(e.target.value)}
+                  className={INPUT_CLS}
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Must finish by (UTC)</label>
+                <input
+                  type="time"
+                  value={editDeadline}
+                  onChange={(e) => setEditDeadline(e.target.value)}
+                  className={INPUT_CLS}
+                />
+              </div>
+            </div>
+          )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
