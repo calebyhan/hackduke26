@@ -1,5 +1,15 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+
+  return null;
+}
 import LandingPage from "./pages/LandingPage";
 import TechnologyPage from "./pages/TechnologyPage";
 import Navbar from "./components/layout/Navbar";
@@ -34,6 +44,7 @@ function Dashboard() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/technology" element={<TechnologyPage />} />

@@ -1,6 +1,32 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import LandingNavbar from '../components/layout/LandingNavbar';
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const barVariants = {
+  hidden: { scaleY: 0 },
+  visible: { scaleY: 1, transition: { duration: 0.5 } },
+};
+
+const scheduleContainerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+  },
+};
+
+const scheduleBarVariants = {
+  hidden: { scaleX: 0 },
+  visible: { scaleX: 1, transition: { duration: 0.5 } },
+};
+
 import Footer from '../components/layout/Footer';
 
 const TechnologyPage: React.FC = () => {
@@ -125,31 +151,45 @@ const TechnologyPage: React.FC = () => {
           <div className="space-y-4">
             <div className="glass-card p-6 border-l-4 border-l-error">
               <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-3">Average Grid Mix (Misleading)</span>
-              <div className="flex items-end gap-1 h-20">
+              <motion.div 
+                className="flex items-end gap-1 h-20"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+              >
                 {[0.6, 0.62, 0.61, 0.63, 0.6, 0.62, 0.61, 0.63, 0.6, 0.62, 0.61, 0.63].map((v, i) => (
-                  <div
+                  <motion.div
                     key={i}
-                    className="flex-1 bg-error/40 rounded-t-sm"
+                    variants={barVariants}
+                    className="flex-1 bg-error/40 rounded-t-sm origin-bottom"
                     style={{ height: `${v * 100}%` }}
                   />
                 ))}
-              </div>
+              </motion.div>
               <p className="text-[10px] text-slate-500 mt-3">Flat average hides real-time fossil peaks</p>
             </div>
             <div className="glass-card p-6 border-l-4 border-l-primary">
               <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-3">Marginal MOER (Actual Reality)</span>
-              <div className="flex items-end gap-1 h-20">
+              <motion.div 
+                className="flex items-end gap-1 h-20"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+              >
                 {[0.2, 0.15, 0.1, 0.12, 0.3, 0.7, 0.95, 1.0, 0.85, 0.5, 0.25, 0.1].map((v, i) => (
-                  <div
+                  <motion.div
                     key={i}
-                    className="flex-1 rounded-t-sm"
+                    variants={barVariants}
+                    className="flex-1 rounded-t-sm origin-bottom"
                     style={{
                       height: `${v * 100}%`,
                       background: v > 0.6 ? 'rgb(239,68,68)' : v > 0.35 ? 'rgb(245,158,11)' : 'rgb(16,185,129)',
                     }}
                   />
                 ))}
-              </div>
+              </motion.div>
               <p className="text-[10px] text-slate-500 mt-3">Real variation exposes the optimal shift window</p>
             </div>
           </div>
@@ -258,28 +298,36 @@ const TechnologyPage: React.FC = () => {
               <span className="font-headline font-bold text-primary uppercase tracking-tighter text-sm">Optimized Schedule Preview</span>
               <span className="text-[10px] text-slate-500">24-hr window</span>
             </div>
-            {[
-              { name: 'Washer', start: 9, dur: 1, color: 'bg-primary' },
-              { name: 'Dryer', start: 10, dur: 1.5, color: 'bg-primary/70' },
-              { name: 'Dishwasher', start: 11, dur: 2, color: 'bg-secondary' },
-              { name: 'EV Charge', start: 22, dur: 3, color: 'bg-secondary/70' },
-              { name: 'HVAC', start: 7, dur: 2, color: 'bg-primary/50' },
-            ].map((item) => (
-              <div key={item.name} className="flex items-center gap-3 mb-3">
-                <span className="text-[10px] text-on-surface-variant w-20 text-right flex-shrink-0">{item.name}</span>
-                <div className="flex-1 h-6 bg-surface-container-lowest rounded-sm relative">
-                  <div
-                    className={`absolute top-0 h-full ${item.color} rounded-sm flex items-center px-2`}
-                    style={{
-                      left: `${(item.start / 24) * 100}%`,
-                      width: `${(item.dur / 24) * 100}%`,
-                    }}
-                  >
-                    <span className="text-[9px] text-white font-bold whitespace-nowrap overflow-hidden">{item.start}:00</span>
+            <motion.div 
+              variants={scheduleContainerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+            >
+              {[
+                { name: 'Washer', start: 9, dur: 1, color: 'bg-primary' },
+                { name: 'Dryer', start: 10, dur: 1.5, color: 'bg-primary/70' },
+                { name: 'Dishwasher', start: 11, dur: 2, color: 'bg-secondary' },
+                { name: 'EV Charge', start: 22, dur: 3, color: 'bg-secondary/70' },
+                { name: 'HVAC', start: 7, dur: 2, color: 'bg-primary/50' },
+              ].map((item) => (
+                <div key={item.name} className="flex items-center gap-3 mb-3">
+                  <span className="text-[10px] text-on-surface-variant w-20 text-right flex-shrink-0">{item.name}</span>
+                  <div className="flex-1 h-6 bg-surface-container-lowest rounded-sm relative">
+                    <motion.div
+                      variants={scheduleBarVariants}
+                      className={`absolute top-0 h-full ${item.color} rounded-sm flex items-center px-2 origin-left`}
+                      style={{
+                        left: `${(item.start / 24) * 100}%`,
+                        width: `${(item.dur / 24) * 100}%`,
+                      }}
+                    >
+                      <span className="text-[9px] text-white font-bold whitespace-nowrap overflow-hidden">{item.start}:00</span>
+                    </motion.div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </motion.div>
             <div className="flex justify-between mt-4 px-20">
               {['0', '6', '12', '18', '24'].map((h) => (
                 <span key={h} className="text-[9px] text-slate-600">{h}h</span>
