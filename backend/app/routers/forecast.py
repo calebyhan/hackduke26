@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException
 
 from app.models.forecast import ForecastPoint, ForecastResponse
+from app.services.air_quality_client import get_hourly_scores
 from app.services.watttime import watttime_client
 
 router = APIRouter()
@@ -28,7 +30,7 @@ def _rebase_fixture_points(points: list[dict]) -> list[dict]:
     return rebased
 
 
-def _normalize_forecast(raw: dict) -> ForecastResponse:
+def _normalize_forecast(raw: dict, air_scores: dict[str, float] | None = None) -> ForecastResponse:
     """Normalize WattTime forecast response to 5-minute intervals."""
     source = raw.get("source", "live")
 
@@ -57,8 +59,16 @@ def _normalize_forecast(raw: dict) -> ForecastResponse:
         start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
         end_dt = start_dt + timedelta(minutes=5)
         moer = float(entry.get("value", 0))
-        # Health score from WattTime or derive from MOER
-        health = float(entry.get("health_score", moer / 1000))
+
+        # Dual-signal health score: 0 = clean, 1 = polluted
+        # 60% marginal CO₂ (MOER), 40% local PM2.5 / NO₂ air quality
+        moer_score = min(1.0, moer / 950)  # CAISO_NORTH typical max ~950 lbs/MWh
+        if air_scores:
+            hour_key = start_dt.strftime("%Y-%m-%dT%H:00")
+            aq_score = air_scores.get(hour_key, 0.0)
+            health = round(0.6 * moer_score + 0.4 * aq_score, 3)
+        else:
+            health = round(moer_score, 3)
 
         points.append(
             ForecastPoint(
@@ -84,13 +94,16 @@ def _normalize_forecast(raw: dict) -> ForecastResponse:
 
 @router.get("/forecast")
 async def get_forecast() -> ForecastResponse:
-    raw = await watttime_client.get_forecast("CAISO_NORTH")
+    raw, air_scores = await asyncio.gather(
+        watttime_client.get_forecast("CAISO_NORTH"),
+        get_hourly_scores("CAISO_NORTH"),
+    )
     try:
-        return _normalize_forecast(raw)
+        return _normalize_forecast(raw, air_scores)
     except ValueError:
         # Fall back to fixture when live data is unavailable or invalid
         fixture_raw = watttime_client._load_fixture("forecast.json")
-        return _normalize_forecast(fixture_raw)
+        return _normalize_forecast(fixture_raw, air_scores)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Forecast normalization failed: {e}")
 

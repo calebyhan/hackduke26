@@ -119,7 +119,7 @@ export default function CommunityView() {
         <p className="text-[9px] text-[#86948a]/40 font-['Space_Grotesk'] leading-relaxed max-w-2xl">
           Estimates derived from per-household optimization results (12.9 lbs CO₂/week saved,
           1.5 kW peak shift, $4.20/week CAISO ELRP credit signal). Diversity factor applied to
-          account for synchronization degradation at scale — GridGhost uses randomized dispatch
+          account for synchronization degradation at scale; GridGhost uses randomized dispatch
           within clean windows to distribute load. Peaker capacity modeled at 500 MW/plant.
           CO₂ equivalence: 4.6 tons/vehicle/year (EPA). Not a utility enrollment or billing commitment.
         </p>
@@ -132,7 +132,7 @@ function ScaleContext({ n, metrics }: { n: number; metrics: ReturnType<typeof co
   if (n <= 500) {
     return (
       <p className="text-xs text-[#86948a] font-['Space_Grotesk'] leading-relaxed">
-        At this scale — a single HOA or apartment complex — natural usage diversity prevents
+        At this scale (a single HOA or apartment complex), natural usage diversity prevents
         synchronization. Nearly full efficiency. A{" "}
         <span className="text-[#4edea3]">{metrics.efficiencyPct}% dispatch efficiency</span> with
         minimal coordination overhead.
@@ -144,7 +144,7 @@ function ScaleContext({ n, metrics }: { n: number; metrics: ReturnType<typeof co
       <p className="text-xs text-[#86948a] font-['Space_Grotesk'] leading-relaxed">
         Neighborhood or small city district scale. GridGhost's staggered dispatch windows spread
         load across a 4-hour clean window, preventing rebound peaks.{" "}
-        <span className="text-[#4edea3]">{metrics.efficiencyPct}% efficiency</span> — well within
+        <span className="text-[#4edea3]">{metrics.efficiencyPct}% efficiency</span>, well within
         what CAISO ELRP programs achieve today.
       </p>
     );
@@ -152,7 +152,7 @@ function ScaleContext({ n, metrics }: { n: number; metrics: ReturnType<typeof co
   if (n <= 25_000) {
     return (
       <p className="text-xs text-[#86948a] font-['Space_Grotesk'] leading-relaxed">
-        City-district or mid-size utility program scale. Coordination matters here — a dedicated
+        City-district or mid-size utility program scale. Coordination matters here: a dedicated
         dispatch signal staggers appliance starts across households.{" "}
         <span className="text-[#f59e0b]">{metrics.efficiencyPct}% efficiency</span> reflects
         realistic coordinated DR program performance.
@@ -161,7 +161,7 @@ function ScaleContext({ n, metrics }: { n: number; metrics: ReturnType<typeof co
   }
   return (
     <p className="text-xs text-[#86948a] font-['Space_Grotesk'] leading-relaxed">
-      Regional utility program scale — comparable to CAISO's largest residential DR enrollments.
+      Regional utility program scale, comparable to CAISO's largest residential DR enrollments.
       At this size, full staggered dispatch infrastructure is required.{" "}
       <span className="text-[#f59e0b]">{metrics.efficiencyPct}% efficiency</span> matches
       real-world outcomes from programs like OhmConnect and PG&E SmartRate.

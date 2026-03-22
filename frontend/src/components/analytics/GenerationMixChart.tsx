@@ -84,13 +84,13 @@ export default function GenerationMixChart({ data }: GenerationMixChartProps) {
     <div className={containerStyle}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium">
-          Generation Mix — {data.respondent}
+          Generation Mix - {data.respondent}
         </h4>
         <SourceBadge source={data.source} />
       </div>
       <ResponsiveContainer width="100%" height={280} className="focus:outline-none">
         <BarChart data={chartData} layout="vertical" style={{ outline: "none" }}>
-          <XAxis type="number" tick={{ fontSize: 12, fill: "#ffffff" }} />
+          <XAxis type="number" tick={{ fontSize: 12, fill: "#ffffff" }} label={{ value: "MW", position: "insideBottomRight", offset: -5, fill: "#ffffff", fontSize: 12 }} />
           <YAxis
             dataKey="name"
             type="category"

@@ -46,7 +46,7 @@ const ConceptSection: React.FC = () => {
             <div className="glass-card p-6 border-l-4 border-l-error">
               <div className="flex justify-between items-center mb-6">
                 <span className="font-headline font-bold text-error uppercase tracking-tighter">Legacy Behavior (Dirty)</span>
-                <span className="text-[10px] text-slate-500">18:00 — 22:00</span>
+                <span className="text-[10px] text-slate-500">18:00–22:00</span>
               </div>
               <motion.div 
                 className="h-28 w-full bg-surface-container-lowest rounded-sm flex items-end px-4 gap-1 pt-6 pb-2"
@@ -74,7 +74,7 @@ const ConceptSection: React.FC = () => {
             <div className="glass-card p-6 border-l-4 border-l-primary">
               <div className="flex justify-between items-center mb-6">
                 <span className="font-headline font-bold text-primary uppercase tracking-tighter">GridGhost Mode (Clean)</span>
-                <span className="text-[10px] text-slate-500">09:00 — 13:00</span>
+                <span className="text-[10px] text-slate-500">09:00–13:00</span>
               </div>
               <motion.div 
                 className="h-28 w-full bg-surface-container-lowest rounded-sm flex items-end px-4 gap-1 pt-6 pb-2"

@@ -11,6 +11,13 @@ class BriefDRReadiness(BaseModel):
     eligibility_note: str
 
 
+class ScheduleChange(BaseModel):
+    appliance_name: str
+    from_time: str
+    to_time: str
+    co2_saved_lbs: float
+
+
 class BriefRequest(BaseModel):
     region: str
     baseline_total_co2_lbs: float
@@ -18,8 +25,10 @@ class BriefRequest(BaseModel):
     co2_percent_reduction: float
     miles_equivalent: float
     dr_readiness: "BriefDRReadinessInput"
-    top_device_changes: list[str]
+    schedule_changes: list[ScheduleChange]
     grid_trend: str
+    peak_temp_f: float | None = None
+    peak_temp_hour: str | None = None
 
 
 class BriefDRReadinessInput(BaseModel):

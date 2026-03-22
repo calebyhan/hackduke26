@@ -44,7 +44,7 @@ const VisualHighlightSection: React.FC = () => {
                   </button>
                 </div>
               )}
-              <p className="text-[10px] text-slate-500 mt-4 uppercase tracking-widest">Limited spots available — Spring 2026</p>
+              <p className="text-[10px] text-slate-500 mt-4 uppercase tracking-widest">Limited spots available · Spring 2026</p>
             </div>
             <div className="hidden md:block">
               <div className="relative">

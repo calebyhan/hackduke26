@@ -28,6 +28,8 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
       <div className="flex items-center gap-4">
         {moer != null && (
           <div className="flex items-center gap-2 text-sm">
+            <span className="text-xs text-text-muted uppercase tracking-widest font-mono">CAISO NORTH</span>
+            <span className="text-slate-600">|</span>
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: moerColor }}
@@ -41,13 +43,13 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         )}
 
         <div className="flex items-center gap-1">
-          <span title="IoT device sync — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
+          <span title="IoT device sync (coming soon)" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">sensors</span>
           </span>
-          <span title="Notifications — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
+          <span title="Notifications (coming soon)" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">notifications</span>
           </span>
-          <span title="Account — coming soon" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
+          <span title="Account (coming soon)" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-600 cursor-default">
             <span className="material-symbols-outlined text-[20px]">account_circle</span>
           </span>
         </div>

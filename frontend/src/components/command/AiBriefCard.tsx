@@ -49,11 +49,9 @@ export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
               {brief.nudges.map((nudge, i) => (
                 <div key={i} className="flex gap-4 items-start group">
                   <div className="w-6 h-6 rounded-sm bg-primary/10 flex items-center justify-center mt-0.5 group-hover:bg-primary/20 transition-colors">
-                    <span className="material-symbols-outlined text-[16px] text-primary">{i === 0 ? 'psychology' : 'warning'}</span>
+                    <span className="material-symbols-outlined text-[16px] text-primary">tips_and_updates</span>
                   </div>
-                  <p className="text-xs text-on-surface-variant leading-relaxed">
-                    <strong className="text-on-surface">{i === 0 ? 'AI Suggestion:' : 'Grid Alert:'}</strong> {nudge}
-                  </p>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{nudge}</p>
                 </div>
               ))}
             </div>
@@ -93,19 +91,15 @@ export default function AiBriefCard({ brief, pctReduction }: AiBriefCardProps) {
             <div className="space-y-4">
               <div className="flex gap-4 items-start">
                 <div className="w-6 h-6 rounded-sm bg-primary/5 flex items-center justify-center mt-0.5">
-                  <span className="material-symbols-outlined text-[16px] text-primary/30">psychology</span>
+                  <span className="material-symbols-outlined text-[16px] text-primary/30">tips_and_updates</span>
                 </div>
-                <p className="text-xs text-on-surface-variant/40 leading-relaxed">
-                  <strong className="text-on-surface/30">AI Suggestion:</strong> Run optimization to unlock personalized load-shifting recommendations.
-                </p>
+                <p className="text-xs text-on-surface-variant/40 leading-relaxed">Run optimization to unlock personalized load-shifting recommendations.</p>
               </div>
               <div className="flex gap-4 items-start">
                 <div className="w-6 h-6 rounded-sm bg-primary/5 flex items-center justify-center mt-0.5">
-                  <span className="material-symbols-outlined text-[16px] text-primary/30">warning</span>
+                  <span className="material-symbols-outlined text-[16px] text-primary/30">tips_and_updates</span>
                 </div>
-                <p className="text-xs text-on-surface-variant/40 leading-relaxed">
-                  <strong className="text-on-surface/30">Grid Alert:</strong> Awaiting live grid signal analysis for your region.
-                </p>
+                <p className="text-xs text-on-surface-variant/40 leading-relaxed">Awaiting live grid signal analysis for your region.</p>
               </div>
             </div>
           </div>

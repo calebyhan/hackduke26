@@ -1,4 +1,6 @@
 import React, { useRef, useEffect } from 'react';
+import { useForecast } from '../../hooks/useForecast';
+import { useGenerationMix } from '../../hooks/useGenerationMix';
 import { Link } from 'react-router-dom';
 
 // Grid layout
@@ -25,6 +27,14 @@ const PEAK_ALPHA = 0.60;
 
 interface Spark { i: number; j: number; life: number }
 
+// EIA codes (lowercased) and fixture names for clean fuels
+const CLEAN_FUELS = new Set(['solar', 'wind', 'hydro', 'nuclear', 'geothermal', 'biomass', 'sun', 'wnd', 'wat', 'nuc', 'geo']);
+const FUEL_DISPLAY: Record<string, string> = {
+  solar: 'Solar', wind: 'Wind', hydro: 'Hydro', nuclear: 'Nuclear',
+  sun: 'Solar', wnd: 'Wind', wat: 'Hydro', nuc: 'Nuclear', geo: 'Geo',
+};
+const FLEXIBLE_KWH = 15; // estimated shiftable home load in kWh
+
 const HeroSection: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef  = useRef<HTMLCanvasElement>(null);
@@ -32,6 +42,52 @@ const HeroSection: React.FC = () => {
   const animRef    = useRef<number>(0);
   const sparksRef  = useRef<Spark[]>([]);
   const timeRef    = useRef(0);
+
+  const { forecast } = useForecast();
+  const { data: genMix } = useGenerationMix();
+
+  // Grid Intensity — current MOER from the nearest forecast point
+  const points = forecast.points ?? [];
+  const now = Date.now();
+  const currentPoint = points.reduce<typeof points[0] | null>((best, p) => {
+    const mid = (new Date(p.start).getTime() + new Date(p.end).getTime()) / 2;
+    if (!best) return p;
+    const bestMid = (new Date(best.start).getTime() + new Date(best.end).getTime()) / 2;
+    return Math.abs(mid - now) < Math.abs(bestMid - now) ? p : best;
+  }, null);
+  const gridIntensity = currentPoint
+    ? `${Math.round(currentPoint.moer_lbs_per_mwh)} lbs/MWh`
+    : '— lbs/MWh';
+
+  // Clean Energy Mix — total clean % labeled by top clean source
+  const cleanEntries = genMix.fuel_mix.filter(e => CLEAN_FUELS.has(e.fuel));
+  const cleanPercent = cleanEntries.reduce((sum, e) => sum + e.percent, 0);
+  const topClean = cleanEntries.length
+    ? cleanEntries.reduce((a, b) => (b.percent > a.percent ? b : a))
+    : null;
+  const cleanLabel = topClean
+    ? `${cleanPercent.toFixed(1)}% ${FUEL_DISPLAY[topClean.fuel] ?? topClean.fuel}`
+    : '—';
+
+  // Peak Forecast — find highest MOER point
+  const peakPoint = points.reduce<typeof points[0] | null>(
+    (max, p) => (p.moer_lbs_per_mwh > (max?.moer_lbs_per_mwh ?? 0) ? p : max),
+    null
+  );
+  const peakTime = peakPoint
+    ? new Date(peakPoint.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    : '—';
+  const peakMoer = peakPoint?.moer_lbs_per_mwh ?? 0;
+  const peakSeverity = peakMoer >= 900 ? 'Critical' : peakMoer >= 750 ? 'High' : 'Elevated';
+  const peakForecast = peakPoint ? `${peakTime} ${peakSeverity}` : '—';
+
+  // Ghost Savings — CO2 saved by shifting flexible loads from peak to cleanest window
+  const moerValues = points.map(p => p.moer_lbs_per_mwh);
+  const minMoer = moerValues.length ? Math.min(...moerValues) : 0;
+  const maxMoer = moerValues.length ? Math.max(...moerValues) : 0;
+  const ghostSavings = moerValues.length
+    ? `${((maxMoer - minMoer) / 1000 * FLEXIBLE_KWH).toFixed(1)} lbs Today`
+    : '— lbs Today';
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -274,19 +330,19 @@ const HeroSection: React.FC = () => {
         <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           <div className="glass-card p-4 text-left">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Grid Intensity</span>
-            <span className="text-xl font-headline font-bold text-primary">754 lbs/MWh</span>
+            <span className="text-xl font-headline font-bold text-primary">{gridIntensity}</span>
           </div>
           <div className="glass-card p-4 text-left">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Clean Energy Mix</span>
-            <span className="text-xl font-headline font-bold text-secondary">64.2% Solar</span>
+            <span className="text-xl font-headline font-bold text-secondary">{cleanLabel}</span>
           </div>
           <div className="glass-card p-4 text-left border-l-2 border-l-error">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Peak Forecast</span>
-            <span className="text-xl font-headline font-bold text-error">18:45 Critical</span>
+            <span className="text-xl font-headline font-bold text-error">{peakForecast}</span>
           </div>
           <div className="glass-card p-4 text-left border-l-2 border-l-primary">
             <span className="block text-[10px] text-slate-500 uppercase mb-1">Ghost Savings</span>
-            <span className="text-xl font-headline font-bold text-primary">12.4 lbs Today</span>
+            <span className="text-xl font-headline font-bold text-primary">{ghostSavings}</span>
           </div>
         </div>
       </div>

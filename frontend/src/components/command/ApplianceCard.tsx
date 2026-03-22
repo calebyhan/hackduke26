@@ -256,7 +256,7 @@ export default function ApplianceCard({
             <div className="bg-surface-container-lowest p-2">
               <span className="block text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Window</span>
               <span className="block font-mono text-xs">
-                {scheduleEntry.start.slice(11, 16)} — {scheduleEntry.end.slice(11, 16)}
+                {scheduleEntry.start.slice(11, 16)}–{scheduleEntry.end.slice(11, 16)}
               </span>
             </div>
             <div className="bg-surface-container-lowest p-2">

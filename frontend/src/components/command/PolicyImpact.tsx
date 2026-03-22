@@ -29,7 +29,7 @@ export default function PolicyImpact({ result }: PolicyImpactProps) {
               <span className="text-text-primary font-medium">
                 CAISO demand-response goals
               </span>{" "}
-              — reducing strain during high-emissions periods when the grid
+              , reducing strain during high-emissions periods when the grid
               relies most on fossil peakers.
             </p>
             <p className="text-text-muted text-[10px] italic mt-2">

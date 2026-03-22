@@ -257,7 +257,7 @@ export default function Timeline({
         />
         <div
           className="absolute z-20 pointer-events-none -translate-x-1/2"
-          style={{ left: `${nowPct}%`, top: -18 }}
+          style={{ left: `${nowPct}%`, top: -22 }}
         >
           <span className="text-[9px] font-mono bg-white/20 text-white px-1 rounded leading-tight">NOW</span>
         </div>

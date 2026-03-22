@@ -70,7 +70,7 @@ const TechnologyPage: React.FC = () => {
             Under the<br /><span className="text-primary">Hood</span>
           </h1>
           <p className="text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed font-light">
-            GridGhost fuses real-time grid telemetry, dual health signals, and AI narrative into a single scheduling engine — here is exactly how.
+            GridGhost fuses real-time grid telemetry, dual health signals, and AI narrative into a single scheduling engine: here is exactly how.
           </p>
         </div>
       </section>
@@ -132,7 +132,7 @@ const TechnologyPage: React.FC = () => {
               Marginal Emissions<br />Rate (MOER)
             </h2>
             <p className="text-on-surface-variant text-lg mb-6 leading-relaxed">
-              Most carbon-aware tools use the <span className="text-on-surface font-semibold">average</span> grid mix. GridGhost uses the <span className="text-primary font-semibold">marginal</span> rate — the emissions of the specific generator that responds to the next kilowatt you draw.
+              Most carbon-aware tools use the <span className="text-on-surface font-semibold">average</span> grid mix. GridGhost uses the <span className="text-primary font-semibold">marginal</span> rate: the emissions of the specific generator that responds to the next kilowatt you draw.
             </p>
             <p className="text-on-surface-variant leading-relaxed mb-8">
               Sourced from <span className="text-on-surface font-medium">WattTime's API</span>, MOER is calculated per balancing authority region (CAISO_NORTH, PJM, MISO, etc.) and updated every five minutes, giving us a precise, real-time carbon cost for every action.
@@ -266,7 +266,7 @@ const TechnologyPage: React.FC = () => {
                 {
                   icon: 'link',
                   title: 'Dependency Handling',
-                  desc: "Appliances with dependencies (dryer must follow washer) are chained — the dryer's earliest start is clamped to the washer's end time.",
+                  desc: "Appliances with dependencies (dryer must follow washer) are chained: the dryer's earliest start is clamped to the washer's end time.",
                 },
                 {
                   icon: 'lock_clock',
@@ -373,7 +373,7 @@ const TechnologyPage: React.FC = () => {
                 Raw MOER numbers mean nothing to most people. Every morning, GridGhost sends the 24-hour forecast, the health score trend, and the proposed appliance schedule to <span className="text-on-surface font-medium">Gemini 2.5 Flash</span>.
               </p>
               <p className="text-on-surface-variant leading-relaxed mb-8">
-                Gemini distills this into a short, plain-English brief explaining <em>why</em> your schedule looks the way it does — surfacing the story behind the data without requiring the user to interpret a single chart.
+                Gemini distills this into a short, plain-English brief explaining <em>why</em> your schedule looks the way it does, surfacing the story behind the data without requiring the user to interpret a single chart.
               </p>
               <div className="flex items-start gap-4">
                 <div className="bg-secondary/10 p-2 rounded-sm mt-1 flex-shrink-0">

@@ -60,6 +60,7 @@ export default function CommandView() {
   const [isOptimized, setIsOptimized] = useState(false);
 
   const handleOptimize = useCallback(async () => {
+    const preOptimizeSchedule = schedule;
     setBaselineSchedule(schedule);
     setIsOptimizing(true);
     const liveAppliances = buildLiveAppliances(appliances, forecast.points);
@@ -81,7 +82,7 @@ export default function CommandView() {
     // Brief appears after animation completes
     setTimeout(async () => {
       try {
-        const briefResult = await fetchBrief(result);
+        const briefResult = await fetchBrief(result, appliances, preOptimizeSchedule, weather);
         setBrief(briefResult);
       } catch {
         setBrief(fixtureBrief);
@@ -153,12 +154,23 @@ export default function CommandView() {
   }, []);
 
   const estimatedBaselineCo2 = useMemo(() => {
-    // CO2 (lbs) = power_kw * duration_hours * moer_lbs_per_mwh / 1000 (kW→MW)
-    return appliances.reduce(
-      (sum, a) => sum + a.power_kw * (a.duration_minutes / 60) * forecastAvgMoer / 1000,
-      0
-    );
-  }, [appliances, forecastAvgMoer]);
+    // Use the MOER at each appliance's preferred_start slot (matches optimizer baseline logic).
+    // Fall back to forecastAvgMoer for appliances without a preferred_start.
+    return appliances.reduce((sum, a) => {
+      let moer = forecastAvgMoer;
+      if (a.preferred_start && forecast.points.length) {
+        const target = new Date(a.preferred_start).getTime();
+        let best = forecast.points[0];
+        let bestDiff = Math.abs(new Date(best.start).getTime() - target);
+        for (const p of forecast.points) {
+          const diff = Math.abs(new Date(p.start).getTime() - target);
+          if (diff < bestDiff) { bestDiff = diff; best = p; }
+        }
+        moer = best.moer_lbs_per_mwh;
+      }
+      return sum + a.power_kw * (a.duration_minutes / 60) * moer / 1000;
+    }, 0);
+  }, [appliances, forecast.points, forecastAvgMoer]);
 
   const baselineCo2 = optimizeResult?.baseline.total_co2_lbs ?? estimatedBaselineCo2;
   const currentCo2 = isOptimized
@@ -217,7 +229,7 @@ export default function CommandView() {
   }, [peakPoint]);
 
   const gridHealthLabel = useMemo(() => {
-    if (!forecast.points.length) return "—";
+    if (!forecast.points.length) return "–";
     const avg = forecast.points.reduce((s, p) => s + p.moer_lbs_per_mwh, 0) / forecast.points.length;
     return { clean: "Clean", moderate: "Moderate", dirty: "Stressed" }[moerToLabel(avg)];
   }, [forecast.points]);
@@ -311,7 +323,7 @@ export default function CommandView() {
                     {conflictInfo.count} appliance{conflictInfo.count > 1 ? "s" : ""}
                   </span>
                   {" "}shifted to cleaner windows
-                  <span className="text-on-surface-variant/60 ml-1">— {conflictInfo.names.join(", ")}</span>
+                  <span className="text-on-surface-variant/60 ml-1">({conflictInfo.names.join(", ")})</span>
                 </span>
               </div>
             </motion.div>
