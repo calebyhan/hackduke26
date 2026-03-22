@@ -21,20 +21,26 @@ Top navbar:
 - logo
 - region badge (CAISO_NORTH)
 - live MOER readout
-- tab switcher (Command, Grid Analytics)
+- tab switcher (Command, Grid Analytics, Community)
 
 Command tab:
-1. Full-width 24-hour timeline at top.
+1. Full-width 24-hour timeline at top (with temperature overlay and appliance chips).
 2. Bottom row with 3 columns:
-- appliance cards (left)
-- optimize action panel (center)
+- appliance cards (left, with add/remove controls)
+- optimize action panel (center, with cycling status messages during optimization)
 - AI brief card (right)
-3. Add a secondary insight row below core cards for policy impact, scaled impact projection, and automation mock CTA.
+3. Secondary insight row below core cards: policy impact, scaled impact projection, automation mock CTA.
 
 Grid Analytics tab:
 1. Generation mix chart.
 2. Dual signal chart.
 3. MOER history chart.
+
+Community tab:
+1. Neighborhood map visualization.
+2. Adoption slider (household count).
+3. Duck curve chart showing demand profile shift as adoption increases.
+4. Community metrics summary.
 
 ## Component Requirements
 

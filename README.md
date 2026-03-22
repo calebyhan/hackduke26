@@ -10,11 +10,12 @@ Most energy dashboards report average grid emissions. But when you turn on an ap
 
 ## How It Works
 
-1. A 24-hour carbon intensity timeline colors each hour by MOER (green = clean, amber = moderate, red = dirty).
-2. Household appliances are shown at their currently scheduled times.
-3. Pressing **Optimize** runs a constrained greedy scheduler that shifts flexible loads into cleaner windows while respecting time-of-use preferences and appliance constraints.
-4. The UI animates appliance blocks sliding to their new times alongside a live carbon counter showing the reduction.
-5. An AI-generated plain-English brief summarizes the schedule, savings, and demand response readiness.
+1. A 24-hour carbon intensity timeline colors each hour by MOER (green = clean, amber = moderate, red = dirty), with a temperature overlay and appliance chips positioned by scheduled start time.
+2. Household appliances are shown at their currently scheduled times. Users can add, remove, and configure appliances inline.
+3. Pressing **Optimize** runs a constrained greedy scheduler that shifts flexible loads into cleaner windows while respecting time-of-use preferences and appliance dependencies (e.g. washer before dryer).
+4. The UI animates appliance chips sliding to their new times alongside a live CO₂ counter tweening to the new value.
+5. An AI-generated plain-English brief (Gemini 2.5 Flash) summarizes the schedule changes, CO₂ savings, demand-response readiness, and weather context.
+6. A **Community** tab simulates grid-scale anti-synchronization effects using an adoption slider and duck curve chart showing how collective scheduling reduces evening demand peaks.
 
 ## Tech Stack
 
@@ -22,8 +23,9 @@ Most energy dashboards report average grid emissions. But when you turn on an ap
 |-------|-----------|
 | Frontend | React 19, Vite, Tailwind CSS, Framer Motion, Recharts |
 | Backend | FastAPI (Python 3.11+) |
-| Grid signals | WattTime v3 API (MOER forecasts) |
+| Grid signals | WattTime v3 API (MOER forecasts + signal index) |
 | Weather | Open-Meteo API |
+| Air quality | Open-Meteo Air Quality API (PM2.5, NO₂) |
 | Generation mix | EIA Open Data API |
 | AI narrative | Google Gemini 2.5 Flash |
 
@@ -37,14 +39,15 @@ gridghost/
 │       ├── models/        # Pydantic request/response schemas
 │       ├── routers/       # FastAPI route handlers
 │       └── services/      # Business logic and external API clients
+├── docs/                  # Product and technical specifications
 ├── frontend/
 │   └── src/
 │       ├── api/           # Axios API client modules
-│       ├── components/    # React components (analytics, command, layout)
+│       ├── components/    # React components (analytics, command, community, landing, layout)
 │       ├── fixtures/      # Client-side fixture data for offline dev
 │       ├── hooks/         # React data-fetching hooks
 │       ├── types/         # TypeScript interfaces
-│       └── utils/         # Color mapping, time formatting, projections
+│       └── utils/         # Color mapping, time formatting, community math, projections
 ├── CONTRIBUTING.md
 ├── LICENSE
 └── README.md

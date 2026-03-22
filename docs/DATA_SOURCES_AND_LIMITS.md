@@ -55,6 +55,31 @@ Mitigations:
 2. Refresh hourly, not per minute.
 3. Gracefully degrade analytics tab when unavailable.
 
+## Open-Meteo Air Quality API
+
+Base URL: https://air-quality-api.open-meteo.com/v1/air-quality
+
+Used params:
+- latitude, longitude
+- hourly=pm2_5,nitrogen_dioxide
+- timezone=UTC
+- forecast_days=2
+
+Constraints:
+1. No auth key required.
+2. Free tier intended for non-commercial use.
+3. Shared-host IP rate limit risk.
+
+Output:
+1. PM2.5 (µg/m³) scaled 0–1 using EPA Good ceiling (12 µg/m³) to Hazardous (150+ µg/m³).
+2. NO₂ (µg/m³) scaled 0–1 using WHO hourly limit (200 µg/m³).
+3. Combined hourly health score = 0.5 × PM2.5 score + 0.5 × NO₂ score.
+
+Mitigations:
+1. Call through backend proxy only.
+2. Cache hourly scores per region (TTL 3600s).
+3. Falls back to MOER-only health scoring on failure — air quality failure is non-fatal.
+
 ## Gemini 2.5 Flash
 
 Usage:

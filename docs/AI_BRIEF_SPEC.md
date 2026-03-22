@@ -40,9 +40,10 @@ Input payload to model must include:
 1. Region and forecast context.
 2. Baseline total CO2 and optimized total CO2.
 3. Absolute and percent savings.
-4. Top device-level schedule changes.
+4. Structured `schedule_changes` list (appliance name, from/to times, CO₂ saved per device).
 5. Notable grid trend summary.
 6. DR readiness summary with qualified/total windows and estimated bill-credit signal.
+7. Optional temperature context (`peak_temp_f`, `peak_temp_hour`): when present, the prompt instructs the model to factor outdoor temperature peaks into the narrative and suggest pre-cooling/pre-heating strategies if HVAC is scheduled.
 
 System instruction requirements:
 

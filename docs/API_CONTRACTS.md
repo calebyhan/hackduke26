@@ -181,6 +181,28 @@ Response 200:
 }
 ```
 
+## GET /api/moer-history
+
+Purpose: historical MOER values for analytics chart.
+
+Query params:
+- region (optional, default "CAISO_NORTH")
+
+Response 200:
+
+```json
+{
+  "region": "CAISO_NORTH",
+  "points": [
+    {
+      "time": "2026-03-21T00:00:00Z",
+      "moer_lbs_per_mwh": 874.3
+    }
+  ],
+  "source": "live|fixture"
+}
+```
+
 ## POST /api/brief
 
 Purpose: generate narrative brief from optimization summary.
@@ -201,12 +223,24 @@ Request:
     "estimated_bill_credit_usd": 4.2,
     "eligibility_note": "Potentially eligible, utility enrollment required"
   },
-  "top_device_changes": [
-    "EV Charger moved from 9:00pm to 2:00am"
+  "schedule_changes": [
+    {
+      "appliance_name": "EV Charger",
+      "from_time": "9:00 PM",
+      "to_time": "2:00 AM",
+      "co2_saved_lbs": 8.4
+    }
   ],
-  "grid_trend": "Afternoon peak correlated with heat"
+  "grid_trend": "Afternoon peak correlated with heat",
+  "peak_temp_f": 91,
+  "peak_temp_hour": "3 PM"
 }
 ```
+
+Notes:
+- `schedule_changes` replaces the previous `top_device_changes` string array. Each entry is a structured object with appliance name, from/to times (formatted in local time), and per-appliance CO₂ saved.
+- `peak_temp_f` and `peak_temp_hour` are optional. When provided, the AI prompt includes weather-aware advice (pre-cooling/pre-heating strategies).
+- `miles_equivalent` is computed by the frontend as `abs(delta.co2_lbs) / 0.89`.
 
 Response 200:
 
