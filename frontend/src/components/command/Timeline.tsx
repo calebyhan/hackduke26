@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import type { ForecastResponse, WeatherResponse } from "../../types/forecast";
 import type { ScheduleEntry } from "../../types/optimize";
 import type { Appliance } from "../../types/appliance";
-import { moerToColor } from "../../utils/colors";
+import { moerToColor, moerToLabel } from "../../utils/colors";
 import { getPstDayStartMs, pstDayFraction, durationToFraction } from "../../utils/time";
 import type { ForecastPoint } from "../../types/forecast";
 
@@ -69,6 +69,8 @@ interface TimelineProps {
   schedule: ScheduleEntry[];
   appliances: Appliance[];
   weather?: WeatherResponse | null;
+  isOptimized?: boolean;
+  baselineSchedule?: ScheduleEntry[];
 }
 
 const CHIP_H = 26;
@@ -107,12 +109,67 @@ function cToF(c: number): number {
   return Math.round(c * 9 / 5 + 32);
 }
 
+function ChipTooltip({
+  entry,
+  appliance,
+  baseline,
+  isOptimized,
+}: {
+  entry: ScheduleEntry;
+  appliance: Appliance;
+  baseline?: ScheduleEntry;
+  isOptimized?: boolean;
+}) {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-US", {
+      hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles", hour12: false,
+    });
+  const startStr = fmt(entry.start);
+  const endStr = fmt(new Date(new Date(entry.start).getTime() + appliance.duration_minutes * 60_000).toISOString());
+  const moer = Math.round(entry.avg_moer_lbs_per_mwh);
+  const label = moerToLabel(moer);
+  const labelText = label === "clean" ? "Clean" : label === "moderate" ? "Moderate" : "Stressed";
+  const labelColor = label === "clean" ? "text-emerald-400" : label === "moderate" ? "text-amber-400" : "text-red-400";
+
+  let shiftLine: string | null = null;
+  if (isOptimized && baseline) {
+    const shiftMs = new Date(entry.start).getTime() - new Date(baseline.start).getTime();
+    const absMin = Math.round(Math.abs(shiftMs) / 60_000);
+    if (absMin >= 15) {
+      const h = Math.floor(absMin / 60);
+      const m = absMin % 60;
+      const dir = shiftMs < 0 ? "earlier" : "later";
+      shiftLine = h > 0 ? `Shifted ${h}h${m > 0 ? ` ${m}m` : ""} ${dir}` : `Shifted ${m}m ${dir}`;
+    }
+  }
+
+  return (
+    <div className="absolute bottom-full left-0 mb-2 z-50 bg-surface-container-high/95 backdrop-blur-sm border border-outline-variant/40 rounded-lg px-3 py-2 shadow-xl pointer-events-none min-w-[150px]">
+      <div className="font-headline text-[11px] font-bold text-on-surface uppercase tracking-wide mb-1">
+        {appliance.name}
+      </div>
+      <div className="font-mono text-[10px] text-on-surface-variant mb-0.5">
+        {startStr} – {endStr} PT
+      </div>
+      <div className={`text-[10px] font-semibold ${labelColor}`}>
+        ● {labelText} · {moer} lbs/MWh
+      </div>
+      {shiftLine && (
+        <div className="text-[10px] text-primary mt-1">↓ {shiftLine}</div>
+      )}
+    </div>
+  );
+}
+
 export default function Timeline({
   forecast,
   schedule,
   appliances,
   weather,
+  isOptimized,
+  baselineSchedule,
 }: TimelineProps) {
+  const [hoveredChipId, setHoveredChipId] = useState<string | null>(null);
   // Refresh "now" every minute so the NOW marker and day anchor stay accurate.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -287,18 +344,31 @@ export default function Timeline({
                 {/* Primary segment */}
                 <motion.div
                   layoutId={entry.appliance_id}
-                  className="absolute flex items-center rounded-md text-xs font-medium text-white cursor-default overflow-hidden"
+                  className="absolute flex items-center rounded-md text-xs font-medium text-white cursor-pointer"
                   style={{
                     left: `${Math.min(normalizedLeft, 99)}%`,
                     width: `${primaryWidth}%`,
                     borderLeft: `3px solid ${accentColor}`,
                     outline: `1px solid rgba(255,255,255,0.15)`,
+                    zIndex: hoveredChipId === entry.appliance_id ? 50 : 1,
                     ...chipGradientStyle(Math.min(normalizedLeft, 99), primaryWidth),
                     ...baseStyle,
                   }}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
+                  onMouseEnter={() => setHoveredChipId(entry.appliance_id)}
+                  onMouseLeave={() => setHoveredChipId(null)}
                 >
-                  <ChipLabel nextDay={isNextDay} />
+                  <div className="absolute inset-0 rounded-md overflow-hidden flex items-center">
+                    <ChipLabel nextDay={isNextDay} />
+                  </div>
+                  {hoveredChipId === entry.appliance_id && (
+                    <ChipTooltip
+                      entry={entry}
+                      appliance={appliance}
+                      baseline={baselineSchedule?.find((b) => b.appliance_id === entry.appliance_id)}
+                      isOptimized={isOptimized}
+                    />
+                  )}
                 </motion.div>
 
                 {/* Wrap-around segment (past PST midnight) */}
