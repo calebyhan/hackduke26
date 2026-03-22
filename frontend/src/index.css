@@ -114,6 +114,21 @@ body {
   background: var(--color-primary);
 }
 
+/* Suppress focus outline on Recharts SVG elements */
+.recharts-wrapper,
+.recharts-wrapper:focus,
+.recharts-wrapper svg,
+.recharts-wrapper svg:focus,
+.recharts-surface,
+.recharts-surface:focus {
+  outline: none !important;
+}
+
+/* SVGs are not keyboard-navigable UI — suppress focus ring globally */
+svg:focus {
+  outline: none !important;
+}
+
 /* Custom Animations */
 @keyframes evident-blink {
   0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 4px var(--color-primary); }
